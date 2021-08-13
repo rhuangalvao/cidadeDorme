@@ -1,11 +1,13 @@
 console.log('> Script started')
 const express = require('express')
+const path = require('path');
 const webApp = express()
 const webServer = require('http').createServer(webApp)
 const io = require('socket.io')(webServer)
 
 const game = createGame()
 let maxConcurrentConnections = 15
+let messages = [];
 
 webApp.get('/', function(req, res){
   res.sendFile(__dirname + '/game.html')
@@ -34,6 +36,14 @@ io.on('connection', function(socket){
     socketId: socket.id,
     newState: playerState
   })
+
+  socket.emit('previousMessages', messages);
+
+    socket.on('sendMessage', data =>{
+        console.log(data);
+        messages.push(data);
+        socket.broadcast.emit('receivedMessage', data);
+    })
 
   socket.on('player-move', (direction) => {
     game.movePlayer(socket.id, direction)

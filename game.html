@@ -1,7 +1,7 @@
 <html>
     <head>
-        <!-- <script type="module" src="server.js"></script> -->
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- <link rel="stylesheet" href="styles.css"> -->
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
         <meta http-equiv="Expires" content="0" />
@@ -15,6 +15,26 @@
                 padding: 0;
                 background-color: #EEE;
                 text-align: center;
+            }
+            #chat {
+              height: 600px !important;
+            }
+
+            input {
+              width: 100%;
+              border: 1px solid #ddd;
+              height: 40px;
+              padding: 0 20px;
+              font-size: 14px;
+            }
+
+            .messages {
+              width: 100%;
+              height: 385px;
+              margin: 20px 0;
+              border: 1px solid #ddd;
+              padding: 20px;
+              overflow: auto;
             }
 
             #game-canvas {
@@ -91,7 +111,6 @@
         </style>
     </head>
     <body>
-
         <div id="max-concurrent-connection-message">
             <h1>Número máximo de conexões atingida!</h1>
             <h2>(não feche esta página)</h2>
@@ -102,10 +121,13 @@
             <table id="score-table"></table>
             <button class="InicioJogo" onclick="sorteioClasses()" type="button">Começar Jogo</button>
         </div>
+        <form id="chat">
+          <div class="messages"></div>
+          <input type="text" name="message" placeholder="Digite sua mensagem...">
+          <button class="btn btn-block mt-2 btn-success" type="submit">Enviar</button>
+        </form>
 
       <script>
-        // import sorteioClasses from  "./server.js";
-
           function getNickName(defaultValue = "Anônimo") {
               const readNickName = sessionStorage.getItem('NickName') || prompt('Digite seu nick:')
               sessionStorage.setItem('NickName',readNickName || defaultValue)
@@ -118,6 +140,36 @@
                   userName: playerName
               }
           })
+
+          function renderMessage(message){
+            $('.messages').append('<div class="message"><b>'+ message.author +': </b> '  + message.message +'</div>')
+          }
+          socket.on('previousMessages', function(messages){
+              for (message of messages){
+                  renderMessage(message);
+              }
+          });
+          socket.on('receivedMessage', function(message){
+              renderMessage(message);
+          })
+
+          $('#chat').submit(function(event){
+              event.preventDefault();
+              var author = playerName;
+              var message = $('input[name=message]').val();
+              if(author.length && message.length){
+                  var messageObject = {
+                      author: author,
+                      message: message,
+                  };
+                  renderMessage(messageObject);
+                  socket.emit('sendMessage', messageObject);
+                  //Limpar campo de mensagem após envio da mensagem:
+                  $('input[name=message]').val('');
+
+              }
+          })
+
 
           let game
           const scoreTable = document.getElementById('score-table')
