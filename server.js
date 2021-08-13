@@ -19,7 +19,6 @@ setInterval(() => {
 
 
 io.on('connection', function(socket){
-  const admin = socket.handshake.query.admin
   const playerName = socket.handshake.query.userName
 
   if (io.engine.clientsCount > maxConcurrentConnections && !admin) {
@@ -68,98 +67,26 @@ webServer.listen(3000, function(){
   console.log('> Server listening on port:',3000)
 });
 
-// function getRandomInt(min, max) {
-//   min = Math.ceil(min);
-//   max = Math.floor(max);
-//   return Math.floor(Math.random() * (max - min)) + min;
-// }
-// module.exports = function sorteioClasses() {
-//   $("#InicioJogo").hide();
-//   let quantidadeJogadores = game.players.length
-//   let jogadorRandomico = getRandomInt(0, quantidadeJogadores-1)
-//   game.players[jogadorRandomico].classe = "Assassino"
-//   for (socketId in game.players) {
-//     if(game.players[socketId].classe != "Assassino"){
-//       game.players[socketId].classe = "Inocente"
-//     }
-//   }
-//   createGame()
-// }
-
 function createGame() {
   console.log('> Starting new game')
-  let fruitGameInterval
 
   const game = {
-    canvasWidth: 35,
-    canvasHeight: 30,
     players: {},
-    fruits: {},
     addPlayer,
     removePlayer,
-    movePlayer,
-    clearScores
   }
 
   function addPlayer(socketId, playerName) {
     return game.players[socketId] = {
-      x: Math.floor(Math.random() * game.canvasWidth),
-      y: Math.floor(Math.random() * game.canvasHeight),
       playerName : playerName,
       classe : "",
       vivo : 1,
-      score: 0
     }
   }
 
   function removePlayer(socketId) {
     delete game.players[socketId]
   }
-
-  function movePlayer(socketId, direction) {
-    const player = game.players[socketId]
-
-    if (direction === 'left' && player.x - 1 >= 0) {
-      player.x = player.x - 1
-    }
-
-    if (direction === 'up' && player.y - 1 >= 0) {
-      player.y = player.y - 1
-    }
-
-    if (direction === 'right' && player.x + 1 < game.canvasWidth) {
-      player.x = player.x + 1
-    }
-
-    if (direction === 'down' && player.y + 1 < game.canvasHeight) {
-      player.y = player.y + 1
-    }
-
-    return player
-  }
-
-  function clearScores() {
-    for (socketId in game.players) {
-      game.players[socketId].score = 0
-    }
-  }
-  // function getRandomInt(min, max) {
-  //   min = Math.ceil(min);
-  //   max = Math.floor(max);
-  //   return Math.floor(Math.random() * (max - min)) + min;
-  // }
-  // module.exports = function sorteioClasses() {
-  //   $("#InicioJogo").hide();
-  //   let quantidadeJogadores = game.players.length
-  //   let jogadorRandomico = getRandomInt(0, quantidadeJogadores-1)
-  //   game.players[jogadorRandomico].classe = "Assassino"
-  //   for (socketId in game.players) {
-  //     if(game.players[socketId].classe != "Assassino"){
-  //       game.players[socketId].classe = "Inocente"
-  //     }
-  //   }
-  //   noite()
-  // }
 
   let tempoDuracao = 12000
   function amanhecer() {

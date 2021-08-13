@@ -16,7 +16,6 @@ export default function sorteioClasses() {
   }
 }
 
-
 let tempoDuracao = 12000
   function amanhecer() {
     let quantidadeVivos = 5
