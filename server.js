@@ -38,56 +38,48 @@ io.on('connection', function(socket){
 
   socket.emit('previousMessages', messages);
 
-    socket.on('sendMessage', data =>{
-        console.log(data);
-        messages.push(data);
-        socket.broadcast.emit('receivedMessage', data);
-    })
-
-  socket.on('player-move', (direction) => {
-    game.movePlayer(socket.id, direction)
-
-
-    socket.broadcast.emit('player-update', {
-      socketId: socket.id,
-      newState: game.players[socket.id]
-    })
-
-
+  socket.on('sendMessage', data =>{
+      console.log(data);
+      messages.push(data);
+      socket.broadcast.emit('receivedMessage', data);
   })
 
-  socket.on('disconnect', () => {
-    game.removePlayer(socket.id)
-    socket.broadcast.emit('player-remove', socket.id)
-  })
-
-});
-
-webServer.listen(3000, function(){
-  console.log('> Server listening on port:',3000)
-});
-
-function createGame() {
-  console.log('> Starting new game')
-
-  const game = {
-    players: {},
-    addPlayer,
-    removePlayer,
+  function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min)) + min;
   }
 
-  function addPlayer(socketId, playerName) {
-    return game.players[socketId] = {
-      playerName : playerName,
-      classe : "",
-      vivo : 1,
+  function sorteioClasses() {
+    var jogadores = []
+    for (socketId in game.players) {
+      jogadores.push(game.players[socketId].playerName)
     }
+    var quantidadeJogadores = jogadores.length
+    console.log(quantidadeJogadores)
+    let jogadorRandomico = getRandomInt(0, quantidadeJogadores-1)
+    console.log(jogadorRandomico)
+    for (socketId in game.players) {
+      if(game.players[socketId].playerName == jogadores[jogadorRandomico]){
+        game.players[socketId].classe = "Assassino"
+      }
+    }
+    for (socketId in game.players) {
+      if(game.players[socketId].classe != "Assassino"){
+        game.players[socketId].classe = "Inocente"
+      }
+    }
+    for (socketId in game.players) {
+      var classeObject = {
+          author: game.players[socketId].playerName,
+          message: "Você é um " + game.players[socketId].classe,
+      };
+      console.log(classeObject);
+      socket.emit('receivedClasse', classeObject);
+      socket.broadcast.emit('receivedClasse', classeObject);
+    }
+    noite()
   }
-
-  function removePlayer(socketId) {
-    delete game.players[socketId]
-  }
-
   let tempoDuracao = 12000
   function amanhecer() {
     let quantidadeVivos = 5
@@ -123,6 +115,41 @@ function createGame() {
     console.log("Noite")
     setTimeout(function(){ amanhecer(); }, tempoDuracao/4);
   }
-  noite()
+
+  socket.on('sorteioClasses', data =>{
+      sorteioClasses()
+  })
+
+  socket.on('disconnect', () => {
+    game.removePlayer(socket.id)
+    socket.broadcast.emit('player-remove', socket.id)
+  })
+
+});
+
+webServer.listen(3000, function(){
+  console.log('> Server listening on port:',3000)
+});
+
+function createGame() {
+  console.log('> Starting new game')
+
+  const game = {
+    players: {},
+    addPlayer,
+    removePlayer,
+  }
+
+  function addPlayer(socketId, playerName) {
+    return game.players[socketId] = {
+      playerName : playerName,
+      classe : "",
+      vivo : 1
+    }
+  }
+
+  function removePlayer(socketId) {
+    delete game.players[socketId]
+  }
   return game
 }

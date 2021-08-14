@@ -103,7 +103,7 @@
             <p>Apesar do número máximo ter sido atingido, esta página ficará tentando reconectar em background automaticamente. Assim que aumentarmos o número de conexões, você não precisará fazer nada para reconectar e começar a jogar com a turma!</p>
         </div>
         <div id="game-container">
-            <!-- <button class="button" onclick="tabelaMangueiras()">Começar Jogo</button> -->
+            <button class="InicioJogo" onclick="comecarJogo()">Começar Jogo</button>
             <table id="score-table"></table>
         </div>
         <form id="chat">
@@ -137,6 +137,12 @@
           socket.on('receivedMessage', function(message){
               renderMessage(message);
           })
+          socket.on('receivedClasse', function(message){
+            if(message.author == playerName){
+              message.author = "JOGO"
+              renderMessage(message);
+            }
+          })
 
           $('#chat').submit(function(event){
               event.preventDefault();
@@ -155,6 +161,10 @@
               }
           })
 
+          function comecarJogo(){
+            socket.emit('sorteioClasses');
+            $("#InicioJogo").hide();
+          }
 
           let game
           const scoreTable = document.getElementById('score-table')
