@@ -147,6 +147,7 @@
             setTimeout(function(){clearInterval( intervalo );}, duration*1000);
           }
 
+
           function getNickName(defaultValue = "Anônimo") {
               const readNickName = sessionStorage.getItem('NickName') || prompt('Digite seu nick:')
               sessionStorage.setItem('NickName',readNickName || defaultValue)
@@ -177,8 +178,11 @@
               renderMessage(message);
             }
           })
+          socket.on('pararTimer', function(message){
+              $("#time").hide()
+          })
 
-          let tempoDuracao = 120000
+          let tempoDuracao = 12000
 
           socket.on('acoesNoite', function(nomeClasse){
             jQuery(function ($) {
@@ -232,6 +236,7 @@
               startTimer(tempo, display);
             });
             setTimeout(function(){ $("#escolhaVotacao").hide(); }, tempoDuracao/4);
+
             for (var property in nomeClasse){
               if(nomeClasse[property].nome == playerName){
                 if(nomeClasse[property].vivo == 1){
@@ -253,7 +258,15 @@
               $('input[name=expulsado]').val('')
           })
 
-          socket.on('segundaVotacao', function(nomeClasse){
+          socket.on('receivedTempoDefesa', function(){
+            jQuery(function ($) {
+              var tempo = tempoDuracao/4000,
+                  display = $('#time');
+              startTimer(tempo, display);
+            });
+          })
+
+          socket.on('segundaVotacao', function(jogadorMaisVotadoObject, nomeClasse){
             jQuery(function ($) {
               var tempo = tempoDuracao/6000,
                   display = $('#time');
@@ -261,7 +274,7 @@
             });
             setTimeout(function(){ $("#escolhaSegundaVotacao").hide(); }, tempoDuracao/6);
             for (var property in nomeClasse){
-              if(nomeClasse[property].nome != playerName){
+              if(nomeClasse[property].nome == playerName && jogadorMaisVotadoObject.nome != playerName){
                 if(nomeClasse[property].vivo == 1){
                   document.getElementById("escolhaSegundaVotacao").innerHTML = ""
                   $('#escolhaSegundaVotacao').show()

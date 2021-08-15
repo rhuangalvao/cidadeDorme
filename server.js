@@ -109,7 +109,7 @@ io.on('connection', function(socket){
   }
 
   var votosConfimarExpulsao = []
-  let tempoDuracao = 120000
+  let tempoDuracao = 12000
 
   function noite() {
     var mensagemJogo = {
@@ -131,7 +131,7 @@ io.on('connection', function(socket){
             game.players[socketId].vivo = 0
             var mortoVotacaoObject = {
                   author: "JOGO",
-                  message: game.players[socketId].playerName + " --foi morto por votacao",
+                  message: game.players[socketId].playerName + " --foi morto por votacao e ele era "+ game.players[socketId].classe,
             };
             socket.emit('receivedMessage', mortoVotacaoObject);
             socket.broadcast.emit('receivedMessage', mortoVotacaoObject);
@@ -140,6 +140,24 @@ io.on('connection', function(socket){
       }
     }
     jogadorMaisVotado = ""
+    let quantidadeVivos = 0
+    for (socketId in game.players) {
+      if(game.players[socketId].vivo == 1){
+        quantidadeVivos += 1
+      }
+    }
+    if(quantidadeVivos <=2){
+      var assassinoGanhouObject = {
+            author: "JOGO",
+            message: "Assassino ganhou",
+      };
+      socket.emit('receivedMessage', assassinoGanhouObject);
+      socket.broadcast.emit('receivedMessage', assassinoGanhouObject);
+      socket.emit('pararTimer');
+      socket.broadcast.emit('pararTimer');
+      return
+      // alert("Assassino ganhou")
+    }
     for (socketId in game.players) {
       if(game.players[socketId].classe == "Assassino" && game.players[socketId].vivo == 0){
         var inocentesGanharamObject = {
@@ -148,6 +166,8 @@ io.on('connection', function(socket){
         };
         socket.emit('receivedMessage', inocentesGanharamObject);
         socket.broadcast.emit('receivedMessage', inocentesGanharamObject);
+        socket.emit('pararTimer');
+        socket.broadcast.emit('pararTimer');
         return
         // alert("Inocentes ganharam")
       }
@@ -171,7 +191,6 @@ io.on('connection', function(socket){
         }
       }
   })
-
 
   function amanhecer() {
     socket.emit('receivedTempoAmanhecer');
@@ -197,6 +216,8 @@ io.on('connection', function(socket){
       };
       socket.emit('receivedMessage', assassinoGanhouObject);
       socket.broadcast.emit('receivedMessage', assassinoGanhouObject);
+      socket.emit('pararTimer');
+      socket.broadcast.emit('pararTimer');
       return
       // alert("Assassino ganhou")
     }
@@ -204,14 +225,16 @@ io.on('connection', function(socket){
       console.log(game.addAcoesOcorreramNoite[author])
       for (socketId in game.players) {
         if(game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima){
-          mensagemAcoes = {
-            author : game.players[socketId].playerName,
-            message : game.players[socketId].classe
+          if(game.addAcoesOcorreramNoite[author].acao == "assassinato"){
+            mensagemAcoes = {
+              author : "JOGO",
+              message : "O jogador "+game.players[socketId].playerName+" foi assassinado, e ele era"+ game.players[socketId].classe
+            }
+            game.addAcoesOcorreramNoite[author].vitima = ""
+            game.addAcoesOcorreramNoite[author].acao = ""
+            socket.emit('receivedMessage', mensagemAcoes);
+            socket.broadcast.emit('receivedMessage', mensagemAcoes);
           }
-          game.addAcoesOcorreramNoite[author].vitima = ""
-          game.addAcoesOcorreramNoite[author].acao = ""
-          socket.emit('receivedMessage', mensagemAcoes);
-          socket.broadcast.emit('receivedMessage', mensagemAcoes);
         }
       }
 
@@ -227,6 +250,7 @@ io.on('connection', function(socket){
     socket.emit('receivedMessage', mensagemJogo);
     socket.broadcast.emit('receivedMessage', mensagemJogo);
     console.log("Primeira votacao")
+
     socket.emit('votacao', nomeClasse());
     socket.broadcast.emit('votacao', nomeClasse());
     setTimeout(function(){ defesa(); }, tempoDuracao/4);
@@ -238,6 +262,8 @@ io.on('connection', function(socket){
   var jogadorMaisVotado = ""
 
   function defesa() {
+    socket.emit('receivedTempoDefesa');
+    socket.broadcast.emit('receivedTempoDefesa');
     var mensagemJogo = {
           author: "JOGO",
           message: "Periodo de defesa do jogador mais votado",
@@ -288,15 +314,15 @@ io.on('connection', function(socket){
       var jogadorMaisVotadoObject = {}
       for (socketId in game.players) {
         if(game.players[socketId].playerName == jogadorMaisVotado){
-          jogadorMaisVotadoObject[socketId] = {
+          jogadorMaisVotadoObject = {
             nome : game.players[socketId].playerName,
             vivo : game.players[socketId].vivo,
             classe : game.players[socketId].classe
           }
         }
       }
-      socket.emit('segundaVotacao', jogadorMaisVotadoObject);
-      socket.broadcast.emit('segundaVotacao', jogadorMaisVotadoObject);
+      socket.emit('segundaVotacao', jogadorMaisVotadoObject, nomeClasse());
+      socket.broadcast.emit('segundaVotacao', jogadorMaisVotadoObject, nomeClasse());
     }
     setTimeout(function(){ noite(); }, tempoDuracao/6);
   }
