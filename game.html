@@ -105,7 +105,12 @@
             <p>Apesar do número máximo ter sido atingido, esta página ficará tentando reconectar em background automaticamente. Assim que aumentarmos o número de conexões, você não precisará fazer nada para reconectar e começar a jogar com a turma!</p>
         </div>
         <div id="game-container">
-            <button class="BotaoInicioJogo" onclick="comecarJogo()">Começar Jogo</button>
+            <form id="botaoComecarJogo">
+              <div id="botaoJogo">
+                <button type="submit">Começar Jogo</button>
+              </div>
+            </form>
+            <div id="time"></div>
             <table id="score-table"></table>
             <form id="acoesNoite">
               <div id="acoes"></div>
@@ -124,6 +129,24 @@
         </form>
 
       <script>
+          function startTimer(duration, display) {
+            var timer = duration, minutes, seconds;
+            var intervalo = setInterval(function () {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.text(minutes + ":" + seconds);
+
+                if (--timer < 0) {
+                    return
+                }
+            }, 1000);
+            setTimeout(function(){clearInterval( intervalo );}, duration*1000);
+          }
+
           function getNickName(defaultValue = "Anônimo") {
               const readNickName = sessionStorage.getItem('NickName') || prompt('Digite seu nick:')
               sessionStorage.setItem('NickName',readNickName || defaultValue)
@@ -154,13 +177,16 @@
               renderMessage(message);
             }
           })
-          socket.on('receivedAcaoNoite', function(message){
-              renderMessage(message);
-          })
 
-          let tempoDuracao = 12000
+          let tempoDuracao = 120000
 
           socket.on('acoesNoite', function(nomeClasse){
+            jQuery(function ($) {
+              var tempo = tempoDuracao/4000,
+                  display = $('#time');
+              startTimer(tempo, display);
+            });
+            setTimeout(function(){ $("#acoes").hide(); }, tempoDuracao/4);
             for (var property in nomeClasse){
               if(nomeClasse[property].nome == playerName){
                 if(nomeClasse[property].classe == "Assassino"){
@@ -169,7 +195,7 @@
                   document.getElementById("acoes").innerHTML +=
                   "<input type='text' name='vitima' placeholder='Digite quem deseja matar...''>" +
                   "<button type='submit'>Matar</button>"
-                  setTimeout(function(){ $("#acoes").hide(); }, tempoDuracao/4);
+
                 }
               }
             }
@@ -190,7 +216,22 @@
               $("#acoes").hide()
               $('input[name=vitima]').val('')
           })
+
+          socket.on('receivedTempoAmanhecer', function(){
+            jQuery(function ($) {
+              var tempo = tempoDuracao/1000,
+                  display = $('#time');
+              startTimer(tempo, display);
+            });
+          })
+
           socket.on('votacao', function(nomeClasse){
+            jQuery(function ($) {
+              var tempo = tempoDuracao/4000,
+                  display = $('#time');
+              startTimer(tempo, display);
+            });
+            setTimeout(function(){ $("#escolhaVotacao").hide(); }, tempoDuracao/4);
             for (var property in nomeClasse){
               if(nomeClasse[property].nome == playerName){
                 if(nomeClasse[property].vivo == 1){
@@ -199,7 +240,6 @@
                   document.getElementById("escolhaVotacao").innerHTML +=
                   "<input type='text' name='expulsado' placeholder='Digite quem deseja expulsar...''>" +
                   "<button type='submit'>Expulsar</button>"
-                  setTimeout(function(){ $("#escolhaVotacao").hide(); }, tempoDuracao/4);
                 }
               }
             }
@@ -214,22 +254,42 @@
           })
 
           socket.on('segundaVotacao', function(nomeClasse){
+            jQuery(function ($) {
+              var tempo = tempoDuracao/6000,
+                  display = $('#time');
+              startTimer(tempo, display);
+            });
+            setTimeout(function(){ $("#escolhaSegundaVotacao").hide(); }, tempoDuracao/6);
             for (var property in nomeClasse){
               if(nomeClasse[property].nome != playerName){
                 if(nomeClasse[property].vivo == 1){
                   document.getElementById("escolhaSegundaVotacao").innerHTML = ""
                   $('#escolhaSegundaVotacao').show()
+                  // document.getElementById("escolhaSegundaVotacao").innerHTML +=
+                  // "<input type='text' name='confirmacao' placeholder='Responda sim ou nao para confirmar a expulsao...''>" +
+                  // "<button type='submit'>Confirmar</button>"
+
                   document.getElementById("escolhaSegundaVotacao").innerHTML +=
-                  "<input type='text' name='confirmacao' placeholder='Responda sim ou nao para confirmar a expulsao...''>" +
-                  "<button type='submit'>Confirmar</button>"
-                  setTimeout(function(){ $("#escolhaSegundaVotacao").hide(); }, tempoDuracao/4);
+                  "<p>Escolha se ele deve ser sacrificado:</p>" +
+                    "<div><input type='radio' id='sim' name='confirmacao' value='sim'>" +
+                      "<label for='sim'>Sim</label>" +
+                      "<input type='radio' id='nao' name='confirmacao' value='nao'>" +
+                      "<label for='nao'>Não</label></div>" +
+                    "<div><button type='submit'>Submit</button></div>"
                 }
               }
             }
           })
           $('#segundaVotacao').submit(function(event){
               event.preventDefault()
-              var confirmacao = $('input[name=confirmacao]').val();
+              var radios = document.getElementsByName("confirmacao");
+              for (var i = 0; i < radios.length; i++) {
+                  if (radios[i].checked) {
+                      var confirmacao = radios[i].value
+                  }
+              }
+
+              // var confirmacao = $('input[name=confirmacao]').val();
               socket.emit('sendSegundaVotacao', confirmacao);
               //Limpar campo de mensagem após envio da mensagem:
               $("#escolhaSegundaVotacao").hide()
@@ -253,10 +313,15 @@
 
               }
           })
+          $('#botaoComecarJogo').submit(function(event){
+              event.preventDefault();
+              socket.emit('sorteioClasses');
+              $("#botaoJogo").hide()
+          })
+          socket.on('esconderBotaoComecar', function(){
+            $("#botaoJogo").hide()
+          })
 
-          function comecarJogo(){
-            socket.emit('sorteioClasses');
-          }
 
           let game
           const scoreTable = document.getElementById('score-table')
@@ -319,6 +384,7 @@
                   scoreArray.push({
                       socketId: socketId,
                       playerName: player.playerName,
+                      vivo: player.vivo
                   })
               }
 

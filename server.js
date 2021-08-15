@@ -8,6 +8,7 @@ const io = require('socket.io')(webServer)
 const game = createGame()
 let maxConcurrentConnections = 15
 let messages = [];
+let votosDoDia = [];
 
 webApp.get('/', function(req, res){
   res.sendFile(__dirname + '/game.html')
@@ -76,6 +77,7 @@ io.on('connection', function(socket){
   })
 
   function sorteioClasses() {
+    socket.broadcast.emit('esconderBotaoComecar');
     var jogadores = []
     for (socketId in game.players) {
       jogadores.push(game.players[socketId].playerName)
@@ -107,27 +109,47 @@ io.on('connection', function(socket){
   }
 
   var votosConfimarExpulsao = []
-  let tempoDuracao = 12000
+  let tempoDuracao = 120000
+
   function noite() {
+    var mensagemJogo = {
+          author: "JOGO",
+          message: "Inicio da Noite",
+    };
+    socket.emit('receivedMessage', mensagemJogo);
+    socket.broadcast.emit('receivedMessage', mensagemJogo);
     console.log("Noite")
     if(votosConfimarExpulsao.length){
       var votosSim = 0
       var votosNao = 0
-      votosSim = votosConfimarExpulsao.filter(x => x === "Sim").length;
-      votosNao = votosConfimarExpulsao.filter(x => x === "Não").length;
+      votosSim = votosConfimarExpulsao.filter(x => x === "sim").length;
+      votosNao = votosConfimarExpulsao.filter(x => x === "nao").length;
 
       if(votosSim > votosNao){
         for (socketId in game.players) {
           if (jogadorMaisVotado == game.players[socketId].playerName) {
             game.players[socketId].vivo = 0
+            var mortoVotacaoObject = {
+                  author: "JOGO",
+                  message: game.players[socketId].playerName + " --foi morto por votacao",
+            };
+            socket.emit('receivedMessage', mortoVotacaoObject);
+            socket.broadcast.emit('receivedMessage', mortoVotacaoObject);
           }
         }
       }
     }
-
+    jogadorMaisVotado = ""
     for (socketId in game.players) {
       if(game.players[socketId].classe == "Assassino" && game.players[socketId].vivo == 0){
-        alert("Inocentes ganharam")
+        var inocentesGanharamObject = {
+              author: "JOGO",
+              message: "Inocentes ganharam",
+        };
+        socket.emit('receivedMessage', inocentesGanharamObject);
+        socket.broadcast.emit('receivedMessage', inocentesGanharamObject);
+        return
+        // alert("Inocentes ganharam")
       }
     }
     socket.emit('acoesNoite', nomeClasse());
@@ -152,16 +174,31 @@ io.on('connection', function(socket){
 
 
   function amanhecer() {
+    socket.emit('receivedTempoAmanhecer');
+    socket.broadcast.emit('receivedTempoAmanhecer');
+    var mensagemJogo = {
+          author: "JOGO",
+          message: "Inicio do dia",
+    };
+    socket.emit('receivedMessage', mensagemJogo);
+    socket.broadcast.emit('receivedMessage', mensagemJogo);
     var mensagemAcoes = {}
     console.log("Amanheceu peguei a viola")
-    let quantidadeVivos = 5
+    let quantidadeVivos = 0
     for (socketId in game.players) {
       if(game.players[socketId].vivo == 1){
         quantidadeVivos += 1
       }
     }
     if(quantidadeVivos <=2){
-      alert("Assassino ganhou")
+      var assassinoGanhouObject = {
+            author: "JOGO",
+            message: "Assassino ganhou",
+      };
+      socket.emit('receivedMessage', assassinoGanhouObject);
+      socket.broadcast.emit('receivedMessage', assassinoGanhouObject);
+      return
+      // alert("Assassino ganhou")
     }
     for (author in game.addAcoesOcorreramNoite) {
       console.log(game.addAcoesOcorreramNoite[author])
@@ -173,8 +210,8 @@ io.on('connection', function(socket){
           }
           game.addAcoesOcorreramNoite[author].vitima = ""
           game.addAcoesOcorreramNoite[author].acao = ""
-          socket.emit('receivedAcaoNoite', mensagemAcoes);
-          socket.broadcast.emit('receivedAcaoNoite', mensagemAcoes);
+          socket.emit('receivedMessage', mensagemAcoes);
+          socket.broadcast.emit('receivedMessage', mensagemAcoes);
         }
       }
 
@@ -183,18 +220,30 @@ io.on('connection', function(socket){
   }
 
   function votacao() {
+    var mensagemJogo = {
+          author: "JOGO",
+          message: "Periodo de Votacao",
+    };
+    socket.emit('receivedMessage', mensagemJogo);
+    socket.broadcast.emit('receivedMessage', mensagemJogo);
     console.log("Primeira votacao")
     socket.emit('votacao', nomeClasse());
     socket.broadcast.emit('votacao', nomeClasse());
     setTimeout(function(){ defesa(); }, tempoDuracao/4);
   }
-  var votosDoDia = []
 
   socket.on('sendVotacao', data =>{
-      votosDoDia.push(data)
+      votosDoDia.push(data);
   })
-var jogadorMaisVotado = ""
+  var jogadorMaisVotado = ""
+
   function defesa() {
+    var mensagemJogo = {
+          author: "JOGO",
+          message: "Periodo de defesa do jogador mais votado",
+    };
+    socket.emit('receivedMessage', mensagemJogo);
+    socket.broadcast.emit('receivedMessage', mensagemJogo);
     console.log("Defesa do reu")
     if(votosDoDia.length){
       var maisVotado = 0
@@ -212,7 +261,14 @@ var jogadorMaisVotado = ""
       if(maisVotado > segundoMaisVotado+1){
         jogadorMaisVotado = nomeMaisVotado
       }
-      for (var i = 0; i < votosDoDia.length; i++) {
+      var maisVotadoObject = {
+            author: "JOGO",
+            message: jogadorMaisVotado + " --foi o jogador mais votado, ele terá um tempo para se defender",
+      };
+      socket.emit('receivedMessage', maisVotadoObject);
+      socket.broadcast.emit('receivedMessage', maisVotadoObject);
+      var total = votosDoDia.length
+      for (var i = 0; i < total; i++) {
         votosDoDia.pop()
       }
     }
@@ -221,6 +277,12 @@ var jogadorMaisVotado = ""
 
 
   function segundaVotacao() {
+    var mensagemJogo = {
+          author: "JOGO",
+          message: "Perido de confirmacao",
+    };
+    socket.emit('receivedMessage', mensagemJogo);
+    socket.broadcast.emit('receivedMessage', mensagemJogo);
     console.log("Segunda votacao")
     if(jogadorMaisVotado.length){
       var jogadorMaisVotadoObject = {}
@@ -236,7 +298,7 @@ var jogadorMaisVotado = ""
       socket.emit('segundaVotacao', jogadorMaisVotadoObject);
       socket.broadcast.emit('segundaVotacao', jogadorMaisVotadoObject);
     }
-    setTimeout(function(){ noite(); }, tempoDuracao/8);
+    setTimeout(function(){ noite(); }, tempoDuracao/6);
   }
 
   socket.on('sendSegundaVotacao', data =>{
