@@ -50,6 +50,31 @@ io.on('connection', function(socket){
     return Math.floor(Math.random() * (max - min)) + min;
   }
 
+  function isEmpty(obj) {
+    for(var prop in obj) {
+      if(obj.hasOwnProperty(prop)) {
+        return false;
+      }
+    }
+    return JSON.stringify(obj) === JSON.stringify({});
+  }
+
+  function nomeClasse(){
+    var nomeClasseObject = {}
+    for (socketId in game.players) {
+      nomeClasseObject[socketId] = {
+        nome : game.players[socketId].playerName,
+        vivo : game.players[socketId].vivo,
+        classe : game.players[socketId].classe
+      }
+    }
+    return nomeClasseObject
+  }
+
+  socket.on('sorteioClasses', data =>{
+      sorteioClasses()
+  })
+
   function sorteioClasses() {
     var jogadores = []
     for (socketId in game.players) {
@@ -80,8 +105,55 @@ io.on('connection', function(socket){
     }
     noite()
   }
+
+  var votosConfimarExpulsao = []
   let tempoDuracao = 12000
+  function noite() {
+    console.log("Noite")
+    if(votosConfimarExpulsao.length){
+      var votosSim = 0
+      var votosNao = 0
+      votosSim = votosConfimarExpulsao.filter(x => x === "Sim").length;
+      votosNao = votosConfimarExpulsao.filter(x => x === "Não").length;
+
+      if(votosSim > votosNao){
+        for (socketId in game.players) {
+          if (jogadorMaisVotado == game.players[socketId].playerName) {
+            game.players[socketId].vivo = 0
+          }
+        }
+      }
+    }
+
+    for (socketId in game.players) {
+      if(game.players[socketId].classe == "Assassino" && game.players[socketId].vivo == 0){
+        alert("Inocentes ganharam")
+      }
+    }
+    socket.emit('acoesNoite', nomeClasse());
+    socket.broadcast.emit('acoesNoite', nomeClasse());
+    console.log(nomeClasse())
+    setTimeout(function(){ amanhecer(); }, tempoDuracao/4);
+  }
+
+  socket.on('sendAcaoNoite', data =>{
+      console.log(data)
+      game.addAcoesOcorreramNoite(data.author,data.qualAcao,data.vitima)
+      for (author in game.addAcoesOcorreramNoite) {
+        if(game.addAcoesOcorreramNoite[author].acao == "assassinato"){
+          for (socketId in game.players) {
+            if(game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima){
+              game.players[socketId].vivo = 0
+            }
+          }
+        }
+      }
+  })
+
+
   function amanhecer() {
+    var mensagemAcoes = {}
+    console.log("Amanheceu peguei a viola")
     let quantidadeVivos = 5
     for (socketId in game.players) {
       if(game.players[socketId].vivo == 1){
@@ -91,34 +163,87 @@ io.on('connection', function(socket){
     if(quantidadeVivos <=2){
       alert("Assassino ganhou")
     }
-    console.log("Amanheceu peguei a viola")
+    for (author in game.addAcoesOcorreramNoite) {
+      console.log(game.addAcoesOcorreramNoite[author])
+      for (socketId in game.players) {
+        if(game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima){
+          mensagemAcoes = {
+            author : game.players[socketId].playerName,
+            message : game.players[socketId].classe
+          }
+          game.addAcoesOcorreramNoite[author].vitima = ""
+          game.addAcoesOcorreramNoite[author].acao = ""
+          socket.emit('receivedAcaoNoite', mensagemAcoes);
+          socket.broadcast.emit('receivedAcaoNoite', mensagemAcoes);
+        }
+      }
+
+    }
     setTimeout(function(){ votacao(); }, tempoDuracao);
   }
+
   function votacao() {
     console.log("Primeira votacao")
+    socket.emit('votacao', nomeClasse());
+    socket.broadcast.emit('votacao', nomeClasse());
     setTimeout(function(){ defesa(); }, tempoDuracao/4);
   }
+  var votosDoDia = []
+
+  socket.on('sendVotacao', data =>{
+      votosDoDia.push(data)
+  })
+var jogadorMaisVotado = ""
   function defesa() {
     console.log("Defesa do reu")
-    setTimeout(function(){ segundaVotacao(); }, tempoDuracao/4);
-  }
-  function segundaVotacao() {
-    console.log("Segunta votacao")
-    setTimeout(function(){ noite(); }, tempoDuracao/8);
-  }
-  function noite() {
-    for (socketId in game.players) {
-      if(game.players[socketId].classe == "Assassino" && game.players[socketId].vivo == 0){
-        alert("Inocentes ganharam")
+    if(votosDoDia.length){
+      var maisVotado = 0
+      var nomeMaisVotado = ""
+      var segundoMaisVotado = 0
+
+      for (socketId in game.players) {
+        aux = votosDoDia.filter(x => x === game.players[socketId].playerName).length;
+        if (aux > maisVotado) {
+          segundoMaisVotado = maisVotado
+          maisVotado = aux
+          nomeMaisVotado = game.players[socketId].playerName
+        }
+      }
+      if(maisVotado > segundoMaisVotado+1){
+        jogadorMaisVotado = nomeMaisVotado
+      }
+      for (var i = 0; i < votosDoDia.length; i++) {
+        votosDoDia.pop()
       }
     }
-    console.log("Noite")
-    setTimeout(function(){ amanhecer(); }, tempoDuracao/4);
+    setTimeout(function(){ segundaVotacao(); }, tempoDuracao/4);
   }
 
-  socket.on('sorteioClasses', data =>{
-      sorteioClasses()
+
+  function segundaVotacao() {
+    console.log("Segunda votacao")
+    if(jogadorMaisVotado.length){
+      var jogadorMaisVotadoObject = {}
+      for (socketId in game.players) {
+        if(game.players[socketId].playerName == jogadorMaisVotado){
+          jogadorMaisVotadoObject[socketId] = {
+            nome : game.players[socketId].playerName,
+            vivo : game.players[socketId].vivo,
+            classe : game.players[socketId].classe
+          }
+        }
+      }
+      socket.emit('segundaVotacao', jogadorMaisVotadoObject);
+      socket.broadcast.emit('segundaVotacao', jogadorMaisVotadoObject);
+    }
+    setTimeout(function(){ noite(); }, tempoDuracao/8);
+  }
+
+  socket.on('sendSegundaVotacao', data =>{
+      votosConfimarExpulsao.push(data)
   })
+
+
 
   socket.on('disconnect', () => {
     game.removePlayer(socket.id)
@@ -136,8 +261,17 @@ function createGame() {
 
   const game = {
     players: {},
+    acoesOcorreramNoite: {},
+    mensagemAcoes: {},
+    addAcoesOcorreramNoite,
     addPlayer,
     removePlayer,
+  }
+  function addAcoesOcorreramNoite(socketId, acao, vitima) {
+    return game.addAcoesOcorreramNoite[socketId] = {
+      acao : acao,
+      vitima : vitima
+    }
   }
 
   function addPlayer(socketId, playerName) {

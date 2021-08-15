@@ -1,6 +1,8 @@
 <html>
     <head>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         <!-- <link rel="stylesheet" href="styles.css"> -->
         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta http-equiv="Pragma" content="no-cache" />
@@ -103,8 +105,17 @@
             <p>Apesar do número máximo ter sido atingido, esta página ficará tentando reconectar em background automaticamente. Assim que aumentarmos o número de conexões, você não precisará fazer nada para reconectar e começar a jogar com a turma!</p>
         </div>
         <div id="game-container">
-            <button class="InicioJogo" onclick="comecarJogo()">Começar Jogo</button>
+            <button class="BotaoInicioJogo" onclick="comecarJogo()">Começar Jogo</button>
             <table id="score-table"></table>
+            <form id="acoesNoite">
+              <div id="acoes"></div>
+            </form>
+            <form id="votacao">
+              <div id="escolhaVotacao"></div>
+            </form>
+            <form id="segundaVotacao">
+              <div id="escolhaSegundaVotacao"></div>
+            </form>
         </div>
         <form id="chat">
           <div class="messages"></div>
@@ -143,6 +154,88 @@
               renderMessage(message);
             }
           })
+          socket.on('receivedAcaoNoite', function(message){
+              renderMessage(message);
+          })
+
+          let tempoDuracao = 12000
+
+          socket.on('acoesNoite', function(nomeClasse){
+            for (var property in nomeClasse){
+              if(nomeClasse[property].nome == playerName){
+                if(nomeClasse[property].classe == "Assassino"){
+                  document.getElementById("acoes").innerHTML = ""
+                  $('#acoes').show()
+                  document.getElementById("acoes").innerHTML +=
+                  "<input type='text' name='vitima' placeholder='Digite quem deseja matar...''>" +
+                  "<button type='submit'>Matar</button>"
+                  setTimeout(function(){ $("#acoes").hide(); }, tempoDuracao/4);
+                }
+              }
+            }
+          })
+
+          $('#acoesNoite').submit(function(event){
+              event.preventDefault()
+              var author = playerName
+              var vitima = $('input[name=vitima]').val();
+              var qualAcao = "assassinato"
+              var acaoObject = {
+                  author: author,
+                  qualAcao: qualAcao,
+                  vitima: vitima,
+              };
+              socket.emit('sendAcaoNoite', acaoObject);
+              //Limpar campo de mensagem após envio da mensagem:
+              $("#acoes").hide()
+              $('input[name=vitima]').val('')
+          })
+          socket.on('votacao', function(nomeClasse){
+            for (var property in nomeClasse){
+              if(nomeClasse[property].nome == playerName){
+                if(nomeClasse[property].vivo == 1){
+                  document.getElementById("escolhaVotacao").innerHTML = ""
+                  $('#escolhaVotacao').show()
+                  document.getElementById("escolhaVotacao").innerHTML +=
+                  "<input type='text' name='expulsado' placeholder='Digite quem deseja expulsar...''>" +
+                  "<button type='submit'>Expulsar</button>"
+                  setTimeout(function(){ $("#escolhaVotacao").hide(); }, tempoDuracao/4);
+                }
+              }
+            }
+          })
+          $('#votacao').submit(function(event){
+              event.preventDefault()
+              var vitima = $('input[name=expulsado]').val();
+              socket.emit('sendVotacao', vitima);
+              //Limpar campo de mensagem após envio da mensagem:
+              $("#escolhaVotacao").hide()
+              $('input[name=expulsado]').val('')
+          })
+
+          socket.on('segundaVotacao', function(nomeClasse){
+            for (var property in nomeClasse){
+              if(nomeClasse[property].nome != playerName){
+                if(nomeClasse[property].vivo == 1){
+                  document.getElementById("escolhaSegundaVotacao").innerHTML = ""
+                  $('#escolhaSegundaVotacao').show()
+                  document.getElementById("escolhaSegundaVotacao").innerHTML +=
+                  "<input type='text' name='confirmacao' placeholder='Responda sim ou nao para confirmar a expulsao...''>" +
+                  "<button type='submit'>Confirmar</button>"
+                  setTimeout(function(){ $("#escolhaSegundaVotacao").hide(); }, tempoDuracao/4);
+                }
+              }
+            }
+          })
+          $('#segundaVotacao').submit(function(event){
+              event.preventDefault()
+              var confirmacao = $('input[name=confirmacao]').val();
+              socket.emit('sendSegundaVotacao', confirmacao);
+              //Limpar campo de mensagem após envio da mensagem:
+              $("#escolhaSegundaVotacao").hide()
+              $('input[name=confirmacao]').val('')
+          })
+
 
           $('#chat').submit(function(event){
               event.preventDefault();
@@ -163,7 +256,6 @@
 
           function comecarJogo(){
             socket.emit('sorteioClasses');
-            $("#InicioJogo").hide();
           }
 
           let game
