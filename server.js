@@ -147,27 +147,13 @@ io.on('connection', function(socket){
       }
     }
     if(quantidadeVivos <=2){
-      var assassinoGanhouObject = {
-            author: "JOGO",
-            message: "Assassino ganhou",
-      };
-      socket.emit('receivedMessage', assassinoGanhouObject);
-      socket.broadcast.emit('receivedMessage', assassinoGanhouObject);
-      socket.emit('pararTimer');
-      socket.broadcast.emit('pararTimer');
+      alguemGanhou("Assassino")
       return
       // alert("Assassino ganhou")
     }
     for (socketId in game.players) {
       if(game.players[socketId].classe == "Assassino" && game.players[socketId].vivo == 0){
-        var inocentesGanharamObject = {
-              author: "JOGO",
-              message: "Inocentes ganharam",
-        };
-        socket.emit('receivedMessage', inocentesGanharamObject);
-        socket.broadcast.emit('receivedMessage', inocentesGanharamObject);
-        socket.emit('pararTimer');
-        socket.broadcast.emit('pararTimer');
+        alguemGanhou("Inocente")
         return
         // alert("Inocentes ganharam")
       }
@@ -192,6 +178,17 @@ io.on('connection', function(socket){
       }
   })
 
+  function alguemGanhou(classeGanhadora){
+    var classeGanhouObject = {
+          author: "JOGO",
+          message: classeGanhadora +" ganhou",
+    };
+    socket.emit('receivedMessage', classeGanhouObject);
+    socket.broadcast.emit('receivedMessage', classeGanhouObject);
+    socket.emit('pararTimer');
+    socket.broadcast.emit('pararTimer');
+  }
+
   function amanhecer() {
     socket.emit('receivedTempoAmanhecer');
     socket.broadcast.emit('receivedTempoAmanhecer');
@@ -203,24 +200,6 @@ io.on('connection', function(socket){
     socket.broadcast.emit('receivedMessage', mensagemJogo);
     var mensagemAcoes = {}
     console.log("Amanheceu peguei a viola")
-    let quantidadeVivos = 0
-    for (socketId in game.players) {
-      if(game.players[socketId].vivo == 1){
-        quantidadeVivos += 1
-      }
-    }
-    if(quantidadeVivos <=2){
-      var assassinoGanhouObject = {
-            author: "JOGO",
-            message: "Assassino ganhou",
-      };
-      socket.emit('receivedMessage', assassinoGanhouObject);
-      socket.broadcast.emit('receivedMessage', assassinoGanhouObject);
-      socket.emit('pararTimer');
-      socket.broadcast.emit('pararTimer');
-      return
-      // alert("Assassino ganhou")
-    }
     for (author in game.addAcoesOcorreramNoite) {
       console.log(game.addAcoesOcorreramNoite[author])
       for (socketId in game.players) {
@@ -228,7 +207,7 @@ io.on('connection', function(socket){
           if(game.addAcoesOcorreramNoite[author].acao == "assassinato"){
             mensagemAcoes = {
               author : "JOGO",
-              message : "O jogador "+game.players[socketId].playerName+" foi assassinado, e ele era"+ game.players[socketId].classe
+              message : "O jogador "+game.players[socketId].playerName+" foi assassinado, e ele era "+ game.players[socketId].classe
             }
             game.addAcoesOcorreramNoite[author].vitima = ""
             game.addAcoesOcorreramNoite[author].acao = ""
@@ -237,7 +216,17 @@ io.on('connection', function(socket){
           }
         }
       }
-
+    }
+    let quantidadeVivos = 0
+    for (socketId in game.players) {
+      if(game.players[socketId].vivo == 1){
+        quantidadeVivos += 1
+      }
+    }
+    if(quantidadeVivos <=2){
+      alguemGanhou("Assassino")
+      return
+      // alert("Assassino ganhou")
     }
     setTimeout(function(){ votacao(); }, tempoDuracao);
   }
