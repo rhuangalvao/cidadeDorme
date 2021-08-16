@@ -1,423 +1,501 @@
 <html>
-    <head>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-        <!-- <link rel="stylesheet" href="styles.css"> -->
-        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-        <meta http-equiv="Pragma" content="no-cache" />
-        <meta http-equiv="Expires" content="0" />
-        <meta charset="utf-8">
-        <title>Cidade Dorme</title>
-        <script src="/socket.io/socket.io.js"></script>
 
-        <style>
-            body {
-                margin: 40px 0 0 0;
-                padding: 0;
-                background-color: #EEE;
-                text-align: center;
-            }
-            #chat {
-              height: 600px !important;
-            }
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <!-- <link rel="stylesheet" href="styles.css"> -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta charset="utf-8">
+  <title>Cidade Dorme</title>
+  <script src="/socket.io/socket.io.js"></script>
 
-            input {
-              width: 100%;
-              border: 1px solid #ddd;
-              height: 40px;
-              padding: 0 20px;
-              font-size: 14px;
-            }
+  <style>
+    body {
+      margin: 40px 0 0 0;
+      padding: 0;
+      background-color: #EEE;
+      text-align: center;
+    }
 
-            .messages {
-              width: 100%;
-              height: 385px;
-              margin: 20px 0;
-              border: 1px solid #ddd;
-              padding: 20px;
-              overflow: auto;
-            }
+    #chat {
+      height: 600px !important;
+    }
 
-            #score-table {
-                font-size: 13px;
-                vertical-align: top;
-                display: inline-block;
-                font-family: Arial, Helvetica, sans-serif
-            }
+    .container {
+      width: 100%;
+      height: 100%;
+    }
 
-            #score-table tr.header td {
-                border-bottom: 1px solid #CCC;
-                padding-bottom: 8px;
-            }
+    .titulo {
+      text-align: center;
+      font-weight: bolder;
+      width: 100%;
+      font-size: 20px;
 
-            #score-table tr.footer td {
-                border-top: 1px solid #CCC;
-                font-size: 11px;
-            }
+      background-color: #EEE;
+    }
 
-            #score-table td {
-                padding-top: 5px;
-                padding-bottom: 5px;
-            }
+    .mensagemChat {
+      max-width: 100%;
+      display: flex;
+    }
 
-            #score-table .socket-id {
-                font-weight: normal;
-                color: #222;
-                width: 150px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                display: inline-block
-            }
+    .digite {
+      margin-right: 5px;
+    }
 
-            #score-table .score-value {
-                font-weight: bold;
-                color: #000;
-                text-align: right;
-            }
+    .jogador {
+      width: 100%;
+      height: 200px;
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+      overflow: auto;
+      text-align: start;
+    }
 
-            #score-table .current-player .socket-id,
-            #score-table .current-player .score-value {
-                color: #bdaa27;
-            }
+    .messages {
+      width: 100%;
+      height: 200px;
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+      overflow: auto;
+      text-align: start;
+    }
 
-            #max-concurrent-connection-message {
-                background-color: #F0DB4F;
-                border: 1px solid #000;
-                text-align:center;
-                margin: auto;
-                margin: 100px;
-                padding: 50px;
-                top: 0;
-                right: 0;
-                bottom: 0;
-                left: 0;
-                font-family: Arial, Helvetica, sans-serif;
-                display: none;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="max-concurrent-connection-message">
-            <h1>Número máximo de conexões atingida!</h1>
-            <h2>(não feche esta página)</h2>
-            <p>Apesar do número máximo ter sido atingido, esta página ficará tentando reconectar em background automaticamente. Assim que aumentarmos o número de conexões, você não precisará fazer nada para reconectar e começar a jogar com a turma!</p>
-        </div>
+    #score-table {
+      font-size: 13px;
+      vertical-align: top;
+      display: inline-block;
+      font-family: Arial, Helvetica, sans-serif
+    }
+
+    #score-table tr.header td {
+      border-bottom: 1px solid #CCC;
+      padding-bottom: 8px;
+    }
+
+    #score-table tr.footer td {
+      border-top: 1px solid #CCC;
+      font-size: 11px;
+    }
+
+    #score-table td {
+      padding-top: 5px;
+      padding-bottom: 5px;
+    }
+
+    #score-table .socket-id {
+      font-weight: normal;
+      color: #222;
+      width: 150px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-block
+    }
+
+    #score-table .score-value {
+      font-weight: bold;
+      color: #000;
+      text-align: right;
+    }
+
+    #score-table .current-player .socket-id,
+    #score-table .current-player .score-value {
+      color: #bdaa27;
+    }
+
+    #max-concurrent-connection-message {
+      background-color: #F0DB4F;
+      border: 1px solid #000;
+      text-align: center;
+      margin: auto;
+      margin: 100px;
+      padding: 50px;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="max-concurrent-connection-message">
+    <h1>Número máximo de conexões atingida!</h1>
+    <h2>(não feche esta página)</h2>
+    <p>Apesar do número máximo ter sido atingido, esta página ficará tentando reconectar em background automaticamente.
+      Assim que aumentarmos o número de conexões, você não precisará fazer nada para reconectar e começar a jogar com a
+      turma!</p>
+
+  </div>
+
+  <div class="container">
+
+    <div class="turno">
+
+    </div>
+
+    <div class="row">
+      <div class="col-3">
+        <div class="titulo">O que esta acontecendo!!</div>
+        <div class="logsJogo"></div>
+      </div>
+
+      <div class="col-6">
+
         <div id="game-container">
-            <form id="botaoComecarJogo">
-              <div id="botaoJogo">
-                <button type="submit">Começar Jogo</button>
-              </div>
-            </form>
-            <div id="time"></div>
-            <table id="score-table"></table>
-            <form id="acoesNoite">
-              <div id="acoes"></div>
-            </form>
-            <form id="votacao">
-              <div id="escolhaVotacao"></div>
-            </form>
-            <form id="segundaVotacao">
-              <div id="escolhaSegundaVotacao"></div>
-            </form>
+          <form id="botaoComecarJogo">
+            <div id="botaoJogo">
+              <button class="btn btn-success" type="submit">Começar Jogo</button>
+            </div>
+          </form>
+          <div id="time"></div>
+          <table id="score-table"></table>
+          <form id="acoesNoite">
+            <div id="acoes"></div>
+          </form>
+          <form id="votacao">
+            <div id="escolhaVotacao"></div>
+          </form>
+          <form id="segundaVotacao">
+            <div id="escolhaSegundaVotacao"></div>
+          </form>
+
         </div>
-        <form id="chat">
-          <div class="messages"></div>
-          <input type="text" name="message" placeholder="Digite sua mensagem...">
-          <button class="btn btn-block mt-2 btn-success" type="submit">Enviar</button>
-        </form>
 
-      <script>
-          function startTimer(duration, display) {
-            var timer = duration, minutes, seconds;
-            var intervalo = setInterval(function () {
-                minutes = parseInt(timer / 60, 10);
-                seconds = parseInt(timer % 60, 10);
+      </div>
 
-                minutes = minutes < 10 ? "0" + minutes : minutes;
-                seconds = seconds < 10 ? "0" + seconds : seconds;
+      <div class="col-3">
+        <div class="titulo">Informações do jogador </div>
+        <div class="jogador">
 
-                display.text(minutes + ":" + seconds);
+        </div>
 
-                if (--timer < 0) {
-                    return
-                }
-            }, 1000);
-            setTimeout(function(){clearInterval( intervalo );}, duration*1000);
+        <hr>
+        <form class="" id="chat">
+          <div class="titulo">Chat </div>
+          <div class="messages">
+
+          </div>
+
+          <div class="mensagemChat">
+            <input class="form-control digite" type="text" name="message" placeholder="Digite sua mensagem...">
+            <button class="btn btn-success " type="submit">Enviar</button>
+          </div>
+
+
+      </div>
+      </form>
+
+    </div>
+
+  </div>
+
+  </div>
+
+  <script>
+    function startTimer(duration, display) {
+      var timer = duration, minutes, seconds;
+      var intervalo = setInterval(function () {
+        minutes = parseInt(timer / 60, 10);
+        seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        display.text(minutes + ":" + seconds);
+
+        if (--timer < 0) {
+          return
+        }
+      }, 1000);
+      setTimeout(function () { clearInterval(intervalo); }, duration * 1000);
+    }
+
+
+    function getNickName(defaultValue = "Anônimo") {
+      const readNickName = sessionStorage.getItem('NickName') || prompt('Digite seu nick:')
+      sessionStorage.setItem('NickName', readNickName || defaultValue)
+      return sessionStorage.getItem('NickName')
+    }
+    const playerName = getNickName()
+    let connected = false
+    const socket = io({
+      query: {
+        userName: playerName
+      }
+    })
+
+    function renderMessage(message) {
+      $('.messages').append('<div class="message"><b>' + message.author + ': </b> ' + message.message + '</div>')
+    }
+    socket.on('previousMessages', function (messages) {
+      for (message of messages) {
+        renderMessage(message);
+      }
+    });
+    socket.on('receivedMessage', function (message) {
+      renderMessage(message);
+    })
+    socket.on('receivedClasse', function (message) {
+      if (message.author == playerName) {
+        message.author = "JOGO"
+        renderMessage(message);
+      }
+    })
+    socket.on('pararTimer', function (message) {
+      $("#time").hide()
+    })
+
+    let tempoDuracao = 12000
+
+    socket.on('acoesNoite', function (nomeClasse) {
+      jQuery(function ($) {
+        var tempo = tempoDuracao / 4000,
+          display = $('#time');
+        startTimer(tempo, display);
+      });
+      setTimeout(function () { $("#acoes").hide(); }, tempoDuracao / 4);
+      for (var property in nomeClasse) {
+        if (nomeClasse[property].nome == playerName) {
+          if (nomeClasse[property].classe == "Assassino") {
+            document.getElementById("acoes").innerHTML = ""
+            $('#acoes').show()
+            document.getElementById("acoes").innerHTML +=
+              "<input type='text' class='form-control' name='vitima' placeholder='Digite quem deseja matar...''>" +
+              "<button type='submit'>Matar</button>"
+
           }
+        }
+      }
+    })
 
+    $('#acoesNoite').submit(function (event) {
+      event.preventDefault()
+      var author = playerName
+      var vitima = $('input[name=vitima]').val();
+      var qualAcao = "assassinato"
+      var acaoObject = {
+        author: author,
+        qualAcao: qualAcao,
+        vitima: vitima,
+      };
+      socket.emit('sendAcaoNoite', acaoObject);
+      //Limpar campo de mensagem após envio da mensagem:
+      $("#acoes").hide()
+      $('input[name=vitima]').val('')
+    })
 
-          function getNickName(defaultValue = "Anônimo") {
-              const readNickName = sessionStorage.getItem('NickName') || prompt('Digite seu nick:')
-              sessionStorage.setItem('NickName',readNickName || defaultValue)
-              return sessionStorage.getItem('NickName')
+    socket.on('receivedTempoAmanhecer', function () {
+      jQuery(function ($) {
+        var tempo = tempoDuracao / 1000,
+          display = $('#time');
+        startTimer(tempo, display);
+      });
+    })
+
+    socket.on('votacao', function (nomeClasse) {
+      jQuery(function ($) {
+        var tempo = tempoDuracao / 4000,
+          display = $('#time');
+        startTimer(tempo, display);
+      });
+      setTimeout(function () { $("#escolhaVotacao").hide(); }, tempoDuracao / 4);
+
+      for (var property in nomeClasse) {
+        if (nomeClasse[property].nome == playerName) {
+          if (nomeClasse[property].vivo == 1) {
+            document.getElementById("escolhaVotacao").innerHTML = ""
+            $('#escolhaVotacao').show()
+            document.getElementById("escolhaVotacao").innerHTML +=
+              "<input type='text' class='form-control' name='expulsado' placeholder='Digite quem deseja expulsar...''>" +
+              "<button type='submit'>Expulsar</button>"
           }
-          const playerName = getNickName()
-          let connected = false
-          const socket = io({
-              query: {
-                  userName: playerName
-              }
-          })
+        }
+      }
+    })
+    $('#votacao').submit(function (event) {
+      event.preventDefault()
+      var vitima = $('input[name=expulsado]').val();
+      socket.emit('sendVotacao', vitima);
+      //Limpar campo de mensagem após envio da mensagem:
+      $("#escolhaVotacao").hide()
+      $('input[name=expulsado]').val('')
+    })
 
-          function renderMessage(message){
-            $('.messages').append('<div class="message"><b>'+ message.author +': </b> '  + message.message +'</div>')
+    socket.on('receivedTempoDefesa', function () {
+      jQuery(function ($) {
+        var tempo = tempoDuracao / 4000,
+          display = $('#time');
+        startTimer(tempo, display);
+      });
+    })
+
+    socket.on('segundaVotacao', function (jogadorMaisVotadoObject, nomeClasse) {
+      jQuery(function ($) {
+        var tempo = tempoDuracao / 6000,
+          display = $('#time');
+        startTimer(tempo, display);
+      });
+      setTimeout(function () { $("#escolhaSegundaVotacao").hide(); }, tempoDuracao / 6);
+      for (var property in nomeClasse) {
+        if (nomeClasse[property].nome == playerName && jogadorMaisVotadoObject.nome != playerName) {
+          if (nomeClasse[property].vivo == 1) {
+            document.getElementById("escolhaSegundaVotacao").innerHTML = ""
+            $('#escolhaSegundaVotacao').show()
+            // document.getElementById("escolhaSegundaVotacao").innerHTML +=
+            // "<input type='text' name='confirmacao' placeholder='Responda sim ou nao para confirmar a expulsao...''>" +
+            // "<button type='submit'>Confirmar</button>"
+
+            document.getElementById("escolhaSegundaVotacao").innerHTML +=
+              "<p>Escolha se ele deve ser sacrificado:</p>" +
+              "<div><input type='radio' id='sim' name='confirmacao' value='sim'>" +
+              "<label for='sim'>Sim</label>" +
+              "<input type='radio' class='form-control' id='nao' name='confirmacao' value='nao'>" +
+              "<label for='nao'>Não</label></div>" +
+              "<div><button type='submit'>Submit</button></div>"
           }
-          socket.on('previousMessages', function(messages){
-              for (message of messages){
-                  renderMessage(message);
-              }
-          });
-          socket.on('receivedMessage', function(message){
-              renderMessage(message);
-          })
-          socket.on('receivedClasse', function(message){
-            if(message.author == playerName){
-              message.author = "JOGO"
-              renderMessage(message);
-            }
-          })
-          socket.on('pararTimer', function(message){
-              $("#time").hide()
-          })
+        }
+      }
+    })
+    $('#segundaVotacao').submit(function (event) {
+      event.preventDefault()
+      var radios = document.getElementsByName("confirmacao");
+      for (var i = 0; i < radios.length; i++) {
+        if (radios[i].checked) {
+          var confirmacao = radios[i].value
+        }
+      }
 
-          let tempoDuracao = 12000
-
-          socket.on('acoesNoite', function(nomeClasse){
-            jQuery(function ($) {
-              var tempo = tempoDuracao/4000,
-                  display = $('#time');
-              startTimer(tempo, display);
-            });
-            setTimeout(function(){ $("#acoes").hide(); }, tempoDuracao/4);
-            for (var property in nomeClasse){
-              if(nomeClasse[property].nome == playerName){
-                if(nomeClasse[property].classe == "Assassino"){
-                  document.getElementById("acoes").innerHTML = ""
-                  $('#acoes').show()
-                  document.getElementById("acoes").innerHTML +=
-                  "<input type='text' name='vitima' placeholder='Digite quem deseja matar...''>" +
-                  "<button type='submit'>Matar</button>"
-
-                }
-              }
-            }
-          })
-
-          $('#acoesNoite').submit(function(event){
-              event.preventDefault()
-              var author = playerName
-              var vitima = $('input[name=vitima]').val();
-              var qualAcao = "assassinato"
-              var acaoObject = {
-                  author: author,
-                  qualAcao: qualAcao,
-                  vitima: vitima,
-              };
-              socket.emit('sendAcaoNoite', acaoObject);
-              //Limpar campo de mensagem após envio da mensagem:
-              $("#acoes").hide()
-              $('input[name=vitima]').val('')
-          })
-
-          socket.on('receivedTempoAmanhecer', function(){
-            jQuery(function ($) {
-              var tempo = tempoDuracao/1000,
-                  display = $('#time');
-              startTimer(tempo, display);
-            });
-          })
-
-          socket.on('votacao', function(nomeClasse){
-            jQuery(function ($) {
-              var tempo = tempoDuracao/4000,
-                  display = $('#time');
-              startTimer(tempo, display);
-            });
-            setTimeout(function(){ $("#escolhaVotacao").hide(); }, tempoDuracao/4);
-
-            for (var property in nomeClasse){
-              if(nomeClasse[property].nome == playerName){
-                if(nomeClasse[property].vivo == 1){
-                  document.getElementById("escolhaVotacao").innerHTML = ""
-                  $('#escolhaVotacao').show()
-                  document.getElementById("escolhaVotacao").innerHTML +=
-                  "<input type='text' name='expulsado' placeholder='Digite quem deseja expulsar...''>" +
-                  "<button type='submit'>Expulsar</button>"
-                }
-              }
-            }
-          })
-          $('#votacao').submit(function(event){
-              event.preventDefault()
-              var vitima = $('input[name=expulsado]').val();
-              socket.emit('sendVotacao', vitima);
-              //Limpar campo de mensagem após envio da mensagem:
-              $("#escolhaVotacao").hide()
-              $('input[name=expulsado]').val('')
-          })
-
-          socket.on('receivedTempoDefesa', function(){
-            jQuery(function ($) {
-              var tempo = tempoDuracao/4000,
-                  display = $('#time');
-              startTimer(tempo, display);
-            });
-          })
-
-          socket.on('segundaVotacao', function(jogadorMaisVotadoObject, nomeClasse){
-            jQuery(function ($) {
-              var tempo = tempoDuracao/6000,
-                  display = $('#time');
-              startTimer(tempo, display);
-            });
-            setTimeout(function(){ $("#escolhaSegundaVotacao").hide(); }, tempoDuracao/6);
-            for (var property in nomeClasse){
-              if(nomeClasse[property].nome == playerName && jogadorMaisVotadoObject.nome != playerName){
-                if(nomeClasse[property].vivo == 1){
-                  document.getElementById("escolhaSegundaVotacao").innerHTML = ""
-                  $('#escolhaSegundaVotacao').show()
-                  // document.getElementById("escolhaSegundaVotacao").innerHTML +=
-                  // "<input type='text' name='confirmacao' placeholder='Responda sim ou nao para confirmar a expulsao...''>" +
-                  // "<button type='submit'>Confirmar</button>"
-
-                  document.getElementById("escolhaSegundaVotacao").innerHTML +=
-                  "<p>Escolha se ele deve ser sacrificado:</p>" +
-                    "<div><input type='radio' id='sim' name='confirmacao' value='sim'>" +
-                      "<label for='sim'>Sim</label>" +
-                      "<input type='radio' id='nao' name='confirmacao' value='nao'>" +
-                      "<label for='nao'>Não</label></div>" +
-                    "<div><button type='submit'>Submit</button></div>"
-                }
-              }
-            }
-          })
-          $('#segundaVotacao').submit(function(event){
-              event.preventDefault()
-              var radios = document.getElementsByName("confirmacao");
-              for (var i = 0; i < radios.length; i++) {
-                  if (radios[i].checked) {
-                      var confirmacao = radios[i].value
-                  }
-              }
-
-              // var confirmacao = $('input[name=confirmacao]').val();
-              socket.emit('sendSegundaVotacao', confirmacao);
-              //Limpar campo de mensagem após envio da mensagem:
-              $("#escolhaSegundaVotacao").hide()
-              $('input[name=confirmacao]').val('')
-          })
+      // var confirmacao = $('input[name=confirmacao]').val();
+      socket.emit('sendSegundaVotacao', confirmacao);
+      //Limpar campo de mensagem após envio da mensagem:
+      $("#escolhaSegundaVotacao").hide()
+      $('input[name=confirmacao]').val('')
+    })
 
 
-          $('#chat').submit(function(event){
-              event.preventDefault();
-              var author = playerName;
-              var message = $('input[name=message]').val();
-              if(author.length && message.length){
-                  var messageObject = {
-                      author: author,
-                      message: message,
-                  };
-                  renderMessage(messageObject);
-                  socket.emit('sendMessage', messageObject);
-                  //Limpar campo de mensagem após envio da mensagem:
-                  $('input[name=message]').val('');
+    $('#chat').submit(function (event) {
+      event.preventDefault();
+      var author = playerName;
+      var message = $('input[name=message]').val();
+      if (author.length && message.length) {
+        var messageObject = {
+          author: author,
+          message: message,
+        };
+        renderMessage(messageObject);
+        socket.emit('sendMessage', messageObject);
+        //Limpar campo de mensagem após envio da mensagem:
+        $('input[name=message]').val('');
 
-              }
-          })
-          $('#botaoComecarJogo').submit(function(event){
-              event.preventDefault();
-              socket.emit('sorteioClasses');
-              $("#botaoJogo").hide()
-          })
-          socket.on('esconderBotaoComecar', function(){
-            $("#botaoJogo").hide()
-          })
-
-
-          let game
-          const scoreTable = document.getElementById('score-table')
-          let totalPlayersCount = ''
-
-          socket.on('connect', () => {
-              connected = true
-              console.log('> Connected to server')
-          })
-
-          socket.on('disconnect', () => {
-              console.log('> Disconnected')
-              connected = false
-          })
-
-          socket.on('bootstrap', (gameInitialState) => {
-              game = gameInitialState
-              console.log('> Received initial state')
-
-              updateScoreTable()
-          })
-
-          socket.on('player-update', (player) => {
-              game.players[player.socketId] = player.newState
-          })
+      }
+    })
+    $('#botaoComecarJogo').submit(function (event) {
+      event.preventDefault();
+      socket.emit('sorteioClasses');
+      $("#botaoJogo").hide()
+    })
+    socket.on('esconderBotaoComecar', function () {
+      $("#botaoJogo").hide()
+    })
 
 
-          socket.on('player-remove', (socketId) => {
-              delete game.players[socketId]
-          })
+    let game
+    const scoreTable = document.getElementById('score-table')
+    let totalPlayersCount = ''
+
+    socket.on('connect', () => {
+      connected = true
+      console.log('> Connected to server')
+    })
+
+    socket.on('disconnect', () => {
+      console.log('> Disconnected')
+      connected = false
+    })
+
+    socket.on('bootstrap', (gameInitialState) => {
+      game = gameInitialState
+      console.log('> Received initial state')
+
+      updateScoreTable()
+    })
+
+    socket.on('player-update', (player) => {
+      game.players[player.socketId] = player.newState
+    })
 
 
-          socket.on('concurrent-connections', (concurrentConnections) => {
-              totalPlayersCount = concurrentConnections
-              updateScoreTable()
-          })
+    socket.on('player-remove', (socketId) => {
+      delete game.players[socketId]
+    })
 
-          socket.on('show-max-concurrent-connections-message', () => {
-              document.getElementById('max-concurrent-connection-message').style.display = 'block'
-              document.getElementById('game-container').style.display = 'none'
-          })
 
-          socket.on('hide-max-concurrent-connections-message', () => {
-              document.getElementById('max-concurrent-connection-message').style.display = 'none'
-              document.getElementById('game-container').style.display = 'block'
-          })
+    socket.on('concurrent-connections', (concurrentConnections) => {
+      totalPlayersCount = concurrentConnections
+      updateScoreTable()
+    })
 
-          function updateScoreTable() {
-              const maxResults = 10
+    socket.on('show-max-concurrent-connections-message', () => {
+      document.getElementById('max-concurrent-connection-message').style.display = 'block'
+      document.getElementById('game-container').style.display = 'none'
+    })
 
-              let scoreTableInnerHTML = `
+    socket.on('hide-max-concurrent-connections-message', () => {
+      document.getElementById('max-concurrent-connection-message').style.display = 'none'
+      document.getElementById('game-container').style.display = 'block'
+    })
+
+    function updateScoreTable() {
+      const maxResults = 10
+
+      let scoreTableInnerHTML = `
                   <tr class="header">
                       <td>Jogadores</td>
                   </tr>
               `
-              const scoreArray = []
+      const scoreArray = []
 
-              for (socketId in game.players) {
-                  const player = game.players[socketId]
-                  scoreArray.push({
-                      socketId: socketId,
-                      playerName: player.playerName,
-                      vivo: player.vivo
-                  })
-              }
+      for (socketId in game.players) {
+        const player = game.players[socketId]
+        scoreArray.push({
+          socketId: socketId,
+          playerName: player.playerName,
+          vivo: player.vivo
+        })
+      }
 
-              scoreArray.forEach((score) => {
+      scoreArray.forEach((score) => {
 
-                  scoreTableInnerHTML += `
-                      <tr class="${ socket.id === score.socketId ? 'current-player' : ''}">
+        scoreTableInnerHTML += `
+                      <tr class="${socket.id === score.socketId ? 'current-player' : ''}">
                           <td class="score-value">${score.playerName}</td>
                       </tr>
                   `
-              })
+      })
 
-              scoreTableInnerHTML += `
+      scoreTableInnerHTML += `
                   <tr class="footer">
                       <td>Total de jogadores</td>
                       <td align="right">${totalPlayersCount}</td>
                   </tr>
               `
-              scoreTable.innerHTML = scoreTableInnerHTML
-          }
-      </script>
-    </body>
+      scoreTable.innerHTML = scoreTableInnerHTML
+    }
+  </script>
+</body>
+
 </html>
