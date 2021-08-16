@@ -181,6 +181,11 @@
           socket.on('pararTimer', function(message){
               $("#time").hide()
           })
+          socket.on('nomeClasseTodos', function(nomeClasseMessage){
+            for (var property in nomeClasseMessage){
+              renderMessage(nomeClasseMessage[property])
+            }
+          })
 
           let tempoDuracao = 12000
 
@@ -199,7 +204,6 @@
                   document.getElementById("acoes").innerHTML +=
                   "<input type='text' name='vitima' placeholder='Digite quem deseja matar...''>" +
                   "<button type='submit'>Matar</button>"
-
                 }
               }
             }
