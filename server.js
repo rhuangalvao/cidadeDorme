@@ -187,6 +187,16 @@ io.on('connection', function(socket){
     socket.broadcast.emit('receivedMessage', classeGanhouObject);
     socket.emit('pararTimer');
     socket.broadcast.emit('pararTimer');
+    var nomeClasseMessage = {}
+    for (socketId in game.players) {
+      nomeClasseMessage[socketId] = {
+        author : "JOGO",
+        message: game.players[socketId].playerName +" era um " +game.players[socketId].classe,
+      }
+    }
+    socket.emit('nomeClasseTodos', nomeClasseMessage);
+    socket.broadcast.emit('nomeClasseTodos', nomeClasseMessage);
+
   }
 
   function amanhecer() {
