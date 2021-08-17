@@ -16,7 +16,7 @@
 
   <style>
     body {
-      margin: 40px 0 0 0;
+
       padding: 0;
       background-color: #EEE;
       text-align: center;
@@ -38,6 +38,13 @@
       font-size: 20px;
 
       background-color: #EEE;
+    }
+
+    .turno {
+      font-weight: bold;
+      font-size: 25px;
+      margin: 15px;
+
     }
 
     .mensagemChat {
@@ -144,7 +151,7 @@
   <div class="container">
 
     <div class="turno">
-
+      Turno: 1
     </div>
 
     <div class="row">
@@ -349,7 +356,7 @@
       }
     })
 
-    let tempoDuracao = 12000
+    let tempoDuracao = 12000;
 
     socket.on('acoesNoite', function (nomeClasse) {
       jQuery(function ($) {
