@@ -43,8 +43,13 @@
     .turno {
       font-weight: bold;
       font-size: 25px;
-      margin: 15px;
+      margin-bottom: 15px;
+      padding-top: 15px;
 
+    }
+
+    .logsJogo {
+      text-align: start;
     }
 
     .mensagemChat {
@@ -151,12 +156,13 @@
   <div class="container">
 
     <div class="turno">
-      Turno: 1
+      Turno:
     </div>
 
     <div class="row">
       <div class="col-3">
         <div class="titulo">O que esta acontecendo!!</div>
+        <br />
         <div class="logsJogo"></div>
       </div>
 
@@ -246,7 +252,12 @@
     })
 
     function renderMessage(message) {
-      $('.messages').append('<div class="message"><b>' + message.author + ': </b> ' + message.message + '</div>')
+      if (message.author == 'JOGO') {
+        $('.logsJogo').append('<div class="message"><b>' + message.author + ': </b> ' + message.message + '</div>')
+      } else {
+        $('.messages').append('<div class="message"><b>' + message.author + ': </b> ' + message.message + '</div>')
+      }
+
     }
     socket.on('previousMessages', function (messages) {
       for (message of messages) {
