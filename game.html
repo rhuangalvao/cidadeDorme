@@ -83,29 +83,29 @@
       text-align: start;
     }
 
-    #score-table {
+    #vivos-table {
       font-size: 13px;
       vertical-align: top;
       display: inline-block;
       font-family: Arial, Helvetica, sans-serif
     }
 
-    #score-table tr.header td {
+    #vivos-table tr.header td {
       border-bottom: 1px solid #CCC;
       padding-bottom: 8px;
     }
 
-    #score-table tr.footer td {
+    #vivos-table tr.footer td {
       border-top: 1px solid #CCC;
       font-size: 11px;
     }
 
-    #score-table td {
+    #vivos-table td {
       padding-top: 5px;
       padding-bottom: 5px;
     }
 
-    #score-table .socket-id {
+    #vivos-table .socket-id {
       font-weight: normal;
       color: #222;
       width: 150px;
@@ -115,14 +115,14 @@
       display: inline-block
     }
 
-    #score-table .score-value {
+    #vivos-table .score-value {
       font-weight: bold;
       color: #000;
       text-align: right;
     }
 
-    #score-table .current-player .socket-id,
-    #score-table .current-player .score-value {
+    #vivos-table .current-player .socket-id,
+    #vivos-table .current-player .score-value {
       color: #bdaa27;
     }
 
@@ -175,7 +175,8 @@
             </div>
           </form>
           <div id="time"></div>
-          <table id="score-table"></table>
+          <table id="mortos-table"></table>
+          <table id="vivos-table"></table>
           <form id="acoesNoite">
             <div id="acoes"></div>
           </form>
@@ -292,7 +293,7 @@
       });
       setTimeout(function () { $("#acoes").hide(); }, tempoDuracao / 4);
       for (var property in nomeClasse) {
-        if (nomeClasse[property].nome == playerName) {
+        if (nomeClasse[property].playerName == playerName) {
           if (nomeClasse[property].classe == "Assassino") {
             document.getElementById("acoes").innerHTML = ""
             $('#acoes').show()
@@ -337,7 +338,7 @@
       setTimeout(function () { $("#escolhaVotacao").hide(); }, tempoDuracao / 4);
 
       for (var property in nomeClasse) {
-        if (nomeClasse[property].nome == playerName) {
+        if (nomeClasse[property].playerName == playerName) {
           if (nomeClasse[property].vivo == 1) {
             document.getElementById("escolhaVotacao").innerHTML = ""
             $('#escolhaVotacao').show()
@@ -373,7 +374,7 @@
       });
       setTimeout(function () { $("#escolhaSegundaVotacao").hide(); }, tempoDuracao / 6);
       for (var property in nomeClasse) {
-        if (nomeClasse[property].nome == playerName && jogadorMaisVotadoObject.nome != playerName) {
+        if (nomeClasse[property].playerName == playerName && jogadorMaisVotadoObject.playerName != playerName) {
           if (nomeClasse[property].vivo == 1) {
             document.getElementById("escolhaSegundaVotacao").innerHTML = ""
             $('#escolhaSegundaVotacao').show()
@@ -436,7 +437,9 @@
 
 
     let game
-    const scoreTable = document.getElementById('score-table')
+    let jogadoresStatus = {players: ""}
+    const scoreTable = document.getElementById('vivos-table')
+    const scoreTableMortos = document.getElementById('mortos-table')
     let totalPlayersCount = ''
 
     socket.on('connect', () => {
@@ -453,12 +456,17 @@
       game = gameInitialState
       console.log('> Received initial state')
 
-      updateScoreTable()
+      updateScoreTable(game)
     })
 
     socket.on('player-update', (player) => {
-      game.players[player.socketId] = player.newState
+      game.players = player
+      updateScoreTable(game)
     })
+    // socket.on('player-atualizado', (player) => {
+    //   jogadoresStatus.players = player
+    //   updateScoreTable(jogadoresStatus)
+    // })
 
 
     socket.on('player-remove', (socketId) => {
@@ -468,7 +476,7 @@
 
     socket.on('concurrent-connections', (concurrentConnections) => {
       totalPlayersCount = concurrentConnections
-      updateScoreTable()
+      updateScoreTable(game)
     })
 
     socket.on('show-max-concurrent-connections-message', () => {
@@ -481,32 +489,48 @@
       document.getElementById('game-container').style.display = 'block'
     })
 
-    function updateScoreTable() {
+    function updateScoreTable(paramGame) {
       const maxResults = 10
 
       let scoreTableInnerHTML = `
                   <tr class="header">
-                      <td>Jogadores</td>
+                      <td>Jogadores Vivos</td>
+                  </tr>
+              `
+      let scoreTableMortosInnerHTML = `
+                  <tr class="header">
+                      <td>Jogadores Mortos</td>
                   </tr>
               `
       const scoreArray = []
 
-      for (socketId in game.players) {
-        const player = game.players[socketId]
+      for (socketId in paramGame.players) {
+        const player = paramGame.players[socketId]
         scoreArray.push({
           socketId: socketId,
           playerName: player.playerName,
           vivo: player.vivo
         })
       }
-
+      console.log(scoreArray);
       scoreArray.forEach((score) => {
+        if(score.vivo == 1){
+          console.log("vivos entrei");
+          scoreTableInnerHTML += `
+                        <tr class="${socket.id === score.socketId ? 'current-player' : ''}">
+                        <td class="score-value">${score.playerName}</td>
+                        </tr>
+                    `
+        }else{
+          console.log("mortos entrei");
+          scoreTableMortosInnerHTML += `
+                        <tr class="${socket.id === score.socketId ? 'current-player' : ''}">
+                        <td class="score-value">${score.playerName}</td>
+                        </tr>
+                    `
+        }
 
-        scoreTableInnerHTML += `
-                      <tr class="${socket.id === score.socketId ? 'current-player' : ''}">
-                          <td class="score-value">${score.playerName}</td>
-                      </tr>
-                  `
+
       })
 
       scoreTableInnerHTML += `
@@ -516,6 +540,7 @@
                   </tr>
               `
       scoreTable.innerHTML = scoreTableInnerHTML
+      scoreTableMortos.innerHTML = scoreTableMortosInnerHTML
     }
 
   </script>

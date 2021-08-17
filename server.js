@@ -14,7 +14,7 @@ webApp.get('/', function(req, res){
   res.sendFile(__dirname + '/game.html')
 })
 
-setInterval(() => {
+setInterval(() => {console.log(io.engine.clientsCount);
   io.emit('concurrent-connections', io.engine.clientsCount)
 }, 5000)
 
@@ -32,10 +32,7 @@ io.on('connection', function(socket){
   const playerState = game.addPlayer(socket.id, playerName)
   socket.emit('bootstrap', game)
 
-  socket.broadcast.emit('player-update', {
-    socketId: socket.id,
-    newState: playerState
-  })
+  socket.broadcast.emit('player-update', nomeClasse())
 
   socket.emit('previousMessages', messages);
 
@@ -64,7 +61,7 @@ io.on('connection', function(socket){
     var nomeClasseObject = {}
     for (socketId in game.players) {
       nomeClasseObject[socketId] = {
-        nome : game.players[socketId].playerName,
+        playerName : game.players[socketId].playerName,
         vivo : game.players[socketId].vivo,
         classe : game.players[socketId].classe
       }
@@ -223,6 +220,8 @@ io.on('connection', function(socket){
             game.addAcoesOcorreramNoite[author].acao = ""
             socket.emit('receivedMessage', mensagemAcoes);
             socket.broadcast.emit('receivedMessage', mensagemAcoes);
+            socket.emit('player-update', nomeClasse())
+            socket.broadcast.emit('player-update', nomeClasse())
           }
         }
       }
@@ -314,7 +313,7 @@ io.on('connection', function(socket){
       for (socketId in game.players) {
         if(game.players[socketId].playerName == jogadorMaisVotado){
           jogadorMaisVotadoObject = {
-            nome : game.players[socketId].playerName,
+            playerName : game.players[socketId].playerName,
             vivo : game.players[socketId].vivo,
             classe : game.players[socketId].classe
           }
