@@ -36,8 +36,11 @@
       font-weight: bolder;
       width: 100%;
       font-size: 20px;
-
       background-color: #EEE;
+    }
+
+    .tabela {
+      align-items: center;
     }
 
     .turno {
@@ -50,6 +53,8 @@
 
     .logsJogo {
       text-align: start;
+      overflow: auto;
+      height: 200px;
     }
 
     .mensagemChat {
@@ -61,7 +66,7 @@
       margin-right: 5px;
     }
 
-    .jogador {
+    .classeJogador {
       width: 100%;
       height: 200px;
       margin: 20px 0;
@@ -84,7 +89,7 @@
     }
 
     #vivos-table {
-      font-size: 13px;
+      font-size: 18px;
       vertical-align: top;
       display: inline-block;
       font-family: Arial, Helvetica, sans-serif
@@ -126,6 +131,49 @@
       color: #bdaa27;
     }
 
+    #mortos-table {
+      font-size: 18px;
+      vertical-align: top;
+      display: inline-block;
+      font-family: Arial, Helvetica, sans-serif
+    }
+
+    #mortos-table tr.header td {
+      border-bottom: 1px solid #CCC;
+      padding-bottom: 8px;
+    }
+
+    #mortos-table tr.footer td {
+      border-top: 1px solid #CCC;
+      font-size: 11px;
+    }
+
+    #mortos-table td {
+      padding-top: 5px;
+      padding-bottom: 5px;
+    }
+
+    #mortos-table .socket-id {
+      font-weight: normal;
+      color: #222;
+      width: 150px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-block
+    }
+
+    #mortos-table .score-value {
+      font-weight: bold;
+      color: #000;
+      text-align: right;
+    }
+
+    #mortos-table .current-player .socket-id,
+    #mortos-table .current-player .score-value {
+      color: #bdaa27;
+    }
+
     #max-concurrent-connection-message {
       background-color: #F0DB4F;
       border: 1px solid #000;
@@ -140,6 +188,24 @@
       font-family: Arial, Helvetica, sans-serif;
       display: none;
     }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track-piece {
+      background-color: #38383849;
+      color: #f4f4f491;
+      -webkit-border-radius: 15px;
+      border-radius: 15px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      -webkit-border-radius: 15px;
+      border-radius: 15px;
+
+      -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+    }
   </style>
 </head>
 
@@ -150,33 +216,32 @@
     <p>Apesar do número máximo ter sido atingido, esta página ficará tentando reconectar em background automaticamente.
       Assim que aumentarmos o número de conexões, você não precisará fazer nada para reconectar e começar a jogar com a
       turma!</p>
-
   </div>
 
   <div class="container">
-
-    <div class="turno">
-      Turno:
-    </div>
-
+    <div id="rodada" class="turno"></div>
     <div class="row">
       <div class="col-3">
         <div class="titulo">O que esta acontecendo!!</div>
         <br />
-        <div class="logsJogo"></div>
+        <div id="logsJogo" class="logsJogo"></div>
       </div>
-
       <div class="col-6">
-
         <div id="game-container">
-          <form id="botaoComecarJogo">
+          <form style='display: none;' id="botaoComecarJogo">
             <div id="botaoJogo">
               <button class="btn btn-success" type="submit">Começar Jogo</button>
             </div>
           </form>
           <div id="time"></div>
-          <table id="mortos-table"></table>
-          <table id="vivos-table"></table>
+          <div class="row">
+            <div class="col-6 tabela">
+              <table id="mortos-table"></table>
+            </div>
+            <div class="col-6 tabela">
+              <table id="vivos-table"></table>
+            </div>
+          </div>
           <form id="acoesNoite">
             <div id="acoes"></div>
           </form>
@@ -186,33 +251,23 @@
           <form id="segundaVotacao">
             <div id="escolhaSegundaVotacao"></div>
           </form>
-
         </div>
-
       </div>
-
       <div class="col-3">
         <div class="titulo">Informações do jogador </div>
-        <div class="jogador">
-
+        <div id="classeJogador" class="classeJogador">
         </div>
-
         <hr>
         <form class="" id="chat">
           <div class="titulo">Chat </div>
-          <div class="messages">
-
+          <div id="messages" class="messages">
           </div>
-
           <div class="mensagemChat">
             <input class="form-control digite" type="text" name="message" placeholder="Digite sua mensagem...">
             <button class="btn btn-success " type="submit">Enviar</button>
           </div>
-
-
       </div>
       </form>
-
     </div>
 
   </div>
@@ -220,6 +275,7 @@
   </div>
 
   <script>
+    //funcao para gerar o timer
     function startTimer(duration, display) {
       var timer = duration, minutes, seconds;
       var intervalo = setInterval(function () {
@@ -238,7 +294,7 @@
       setTimeout(function () { clearInterval(intervalo); }, duration * 1000);
     }
 
-
+    //funcao para pegar o nome do novo jogador
     function getNickName(defaultValue = "Anônimo") {
       const readNickName = sessionStorage.getItem('NickName') || prompt('Digite seu nick:')
       sessionStorage.setItem('NickName', readNickName || defaultValue)
@@ -251,36 +307,60 @@
         userName: playerName
       }
     })
-
+    //funcao para imprimir mensagem na tela
     function renderMessage(message) {
       if (message.author == 'JOGO') {
-        $('.logsJogo').append('<div class="message"><b>' + message.author + ': </b> ' + message.message + '</div>')
-      } else {
+        $('.logsJogo').append('<div class="message">' + message.message + '</div>')
+        let el = document.querySelector('.logsJogo');
+        let height = el.scrollHeight;
+        el.scrollTop = height;
+      }else if (message.author == 'CLASSE') {
+        $('.classeJogador').append('<div class="message"><b>' + message.message + '</div>')
+        let el = document.querySelector('.classeJogador');
+        let height = el.scrollHeight;
+        el.scrollTop = height;
+      }
+      else {
         $('.messages').append('<div class="message"><b>' + message.author + ': </b> ' + message.message + '</div>')
+        let el = document.querySelector('.messages');
+        let height = el.scrollHeight;
+        el.scrollTop = height;
       }
 
     }
     socket.on('previousMessages', function (messages) {
       for (message of messages) {
-        renderMessage(message);
+        renderMessage(message)
       }
     });
     socket.on('receivedMessage', function (message) {
-      renderMessage(message);
+      renderMessage(message)
+    })
+    socket.on('atualizarRodada', function (rodada) {
+      document.getElementById("rodada").innerHTML =
+        "<h5>Dia "+rodada+"</h5>"
     })
     socket.on('receivedClasse', function (message) {
       if (message.author == playerName) {
-        message.author = "JOGO"
-        renderMessage(message);
+        message.author = "CLASSE"
+        renderMessage(message)
       }
     })
+
     socket.on('pararTimer', function (message) {
+      startTimer(1, $('#time'))
       $("#time").hide()
     })
     socket.on('nomeClasseTodos', function (nomeClasseMessage) {
       for (var property in nomeClasseMessage) {
         renderMessage(nomeClasseMessage[property])
       }
+    })
+    socket.on('novaPartida', function () {
+      $("#botaoComecarJogo").show()
+    })
+    socket.on('limparLogsChats', function () {
+      $("#botaoComecarJogo").show()
     })
 
     let tempoDuracao = 12000
@@ -292,14 +372,23 @@
         startTimer(tempo, display);
       });
       setTimeout(function () { $("#acoes").hide(); }, tempoDuracao / 4);
+      //percorre todos os perfis
       for (var property in nomeClasse) {
+        //verifica se é o player local
         if (nomeClasse[property].playerName == playerName) {
+          //verifica a classe dele
           if (nomeClasse[property].classe == "Assassino") {
             document.getElementById("acoes").innerHTML = ""
             $('#acoes').show()
+            for (var destino in nomeClasse){
+              if (nomeClasse[destino].playerName != playerName){
+                document.getElementById("acoes").innerHTML +=
+                "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
+                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+              }
+            }
             document.getElementById("acoes").innerHTML +=
-              "<input type='text' name='vitima' placeholder='Digite quem deseja matar...''>" +
-              "<button type='submit'>Matar</button>"
+                "<button type='submit'>Matar</button>"
           }
         }
       }
@@ -307,8 +396,15 @@
 
     $('#acoesNoite').submit(function (event) {
       event.preventDefault()
+      //Pega qual jogador ele escolheu
+      var radios = document.getElementsByName("vitima");
+      for (var i = 0; i < radios.length; i++) {
+        if (radios[i].checked) {
+          var vitima = radios[i].value
+        }
+      }
+      //Manda para o back a ação
       var author = playerName
-      var vitima = $('input[name=vitima]').val();
       var qualAcao = "assassinato"
       var acaoObject = {
         author: author,
@@ -321,6 +417,7 @@
       $('input[name=vitima]').val('')
     })
 
+    //Ativa o timer para o tempo do amanhecer
     socket.on('receivedTempoAmanhecer', function () {
       jQuery(function ($) {
         var tempo = tempoDuracao / 1000,
@@ -342,16 +439,27 @@
           if (nomeClasse[property].vivo == 1) {
             document.getElementById("escolhaVotacao").innerHTML = ""
             $('#escolhaVotacao').show()
+            for (var destino in nomeClasse){
+              if (nomeClasse[destino].playerName != playerName){
+                document.getElementById("escolhaVotacao").innerHTML +=
+                "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='expulsado' value="+nomeClasse[destino].playerName+">" +
+                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+              }
+            }
             document.getElementById("escolhaVotacao").innerHTML +=
-              "<input type='text' name='expulsado' placeholder='Digite quem deseja expulsar...''>" +
-              "<button type='submit'>Expulsar</button>"
+                "<button type='submit'>Expulsar</button>"
           }
         }
       }
     })
     $('#votacao').submit(function (event) {
       event.preventDefault()
-      var vitima = $('input[name=expulsado]').val();
+      var radios = document.getElementsByName("expulsado");
+      for (var i = 0; i < radios.length; i++) {
+        if (radios[i].checked) {
+          var vitima = radios[i].value
+        }
+      }
       socket.emit('sendVotacao', vitima);
       //Limpar campo de mensagem após envio da mensagem:
       $("#escolhaVotacao").hide()
@@ -378,10 +486,6 @@
           if (nomeClasse[property].vivo == 1) {
             document.getElementById("escolhaSegundaVotacao").innerHTML = ""
             $('#escolhaSegundaVotacao').show()
-            // document.getElementById("escolhaSegundaVotacao").innerHTML +=
-            // "<input type='text' name='confirmacao' placeholder='Responda sim ou nao para confirmar a expulsao...''>" +
-            // "<button type='submit'>Confirmar</button>"
-
             document.getElementById("escolhaSegundaVotacao").innerHTML +=
               "<p>Escolha se ele deve ser sacrificado:</p>" +
               "<div><input type='radio' id='sim' name='confirmacao' value='sim'>" +
@@ -426,13 +530,19 @@
 
       }
     })
+
+    let totalPlayersCount = ''
     $('#botaoComecarJogo').submit(function (event) {
       event.preventDefault();
       socket.emit('sorteioClasses');
-      $("#botaoJogo").hide()
+      $("#botaoComecarJogo").hide()
     })
     socket.on('esconderBotaoComecar', function () {
-      $("#botaoJogo").hide()
+      $("#botaoComecarJogo").hide()
+      $("#time").show()
+      document.getElementById("logsJogo").innerHTML = ""
+      document.getElementById("classeJogador").innerHTML = ""
+      document.getElementById("messages").innerHTML = ""
     })
 
 
@@ -440,7 +550,7 @@
     let jogadoresStatus = {players: ""}
     const scoreTable = document.getElementById('vivos-table')
     const scoreTableMortos = document.getElementById('mortos-table')
-    let totalPlayersCount = ''
+
 
     socket.on('connect', () => {
       connected = true
@@ -463,20 +573,18 @@
       game.players = player
       updateScoreTable(game)
     })
-    // socket.on('player-atualizado', (player) => {
-    //   jogadoresStatus.players = player
-    //   updateScoreTable(jogadoresStatus)
-    // })
-
 
     socket.on('player-remove', (socketId) => {
       delete game.players[socketId]
     })
 
 
-    socket.on('concurrent-connections', (concurrentConnections) => {
+    socket.on('concurrent-connections', (concurrentConnections, rodada) => {
       totalPlayersCount = concurrentConnections
       updateScoreTable(game)
+      if (totalPlayersCount>=3 && rodada==0) {
+        $("#botaoComecarJogo").show()
+      }
     })
 
     socket.on('show-max-concurrent-connections-message', () => {
@@ -512,17 +620,14 @@
           vivo: player.vivo
         })
       }
-      console.log(scoreArray);
       scoreArray.forEach((score) => {
         if(score.vivo == 1){
-          console.log("vivos entrei");
           scoreTableInnerHTML += `
                         <tr class="${socket.id === score.socketId ? 'current-player' : ''}">
                         <td class="score-value">${score.playerName}</td>
                         </tr>
                     `
         }else{
-          console.log("mortos entrei");
           scoreTableMortosInnerHTML += `
                         <tr class="${socket.id === score.socketId ? 'current-player' : ''}">
                         <td class="score-value">${score.playerName}</td>
