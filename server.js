@@ -11,13 +11,14 @@ let messages = []
 let resumoPartida = []
 let votosDoDia = []
 let rodada = 0
+let donoDaSala_socketID = ""
 
 webApp.get('/', function(req, res){
   res.sendFile(__dirname + '/game.html')
 })
 
 setInterval(() => {
-  io.emit('concurrent-connections', io.engine.clientsCount, rodada)
+  io.emit('concurrent-connections', io.engine.clientsCount, rodada, donoDaSala_socketID)
 }, 5000)
 
 
@@ -30,6 +31,9 @@ io.on('connection', function(socket){
     return
   } else {
     socket.emit('hide-max-concurrent-connections-message')
+  }
+  if (io.engine.clientsCount == 1){
+    donoDaSala_socketID = socket.id
   }
   const playerState = game.addPlayer(socket.id, playerName)
   socket.emit('bootstrap', game)
@@ -61,6 +65,7 @@ io.on('connection', function(socket){
     var nomeClasseObject = {}
     for (socketId in game.players) {
       nomeClasseObject[socketId] = {
+        donoDaSala : game.players[socketId].donoDaSala,
         playerName : game.players[socketId].playerName,
         vivo : game.players[socketId].vivo,
         classe : game.players[socketId].classe
@@ -88,8 +93,8 @@ io.on('connection', function(socket){
       }
       socket.emit('nomeClasseTodos', nomeClasseMessage);
       socket.broadcast.emit('nomeClasseTodos', nomeClasseMessage);
-      socket.emit('novaPartida');
-      socket.broadcast.emit('novaPartida');
+      socket.emit('novaPartida', donoDaSala_socketID);
+      socket.broadcast.emit('novaPartida', donoDaSala_socketID);
 
     }
 //envia para o front a mensagem do parametro
@@ -382,6 +387,15 @@ io.on('connection', function(socket){
   socket.on('disconnect', () => {
     game.removePlayer(socket.id)
     socket.broadcast.emit('player-remove', socket.id)
+    if (socket.id == donoDaSala_socketID) {
+      let contador = 0
+      for (socketId in game.players){
+        if (contador == 0) {
+          donoDaSala_socketID = socketId
+        }
+        contador+=1
+      }
+    }
   })
 
 });

@@ -356,11 +356,10 @@
         renderMessage(nomeClasseMessage[property])
       }
     })
-    socket.on('novaPartida', function () {
-      $("#botaoComecarJogo").show()
-    })
-    socket.on('limparLogsChats', function () {
-      $("#botaoComecarJogo").show()
+    socket.on('novaPartida', function (donoDaSala_socketID) {
+      if (socket.id == donoDaSala_socketID) {
+        $("#botaoComecarJogo").show()
+      }
     })
 
     let tempoDuracao = 12000
@@ -579,10 +578,11 @@
     })
 
 
-    socket.on('concurrent-connections', (concurrentConnections, rodada) => {
+    socket.on('concurrent-connections', (concurrentConnections, rodada, donoDaSala_socketID) => {
       totalPlayersCount = concurrentConnections
       updateScoreTable(game)
-      if (totalPlayersCount>=3 && rodada==0) {
+      //Verifica se há mais de 3 jogadores, se o jogo nao foi iniciado e se é o dono da sala
+      if (totalPlayersCount>=3 && rodada==0 && socket.id == donoDaSala_socketID) {
         $("#botaoComecarJogo").show()
       }
     })
