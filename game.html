@@ -231,6 +231,11 @@
               <button class="btn btn-success" type="submit">Começar Jogo</button>
             </div>
           </form>
+          <form style='display: none;' id="botaoReiniciarJogo">
+            <div id="botaoReiniciar">
+              <button class="btn btn-success" type="submit">Reiniciar Jogo</button>
+            </div>
+          </form>
           <div id="time"></div>
           <div class="row">
             <div class="col-6 tabela">
@@ -534,6 +539,10 @@
       socket.emit('sorteioClasses');
       $("#botaoComecarJogo").hide()
     })
+    $('#botaoReiniciarJogo').submit(function (event) {
+      event.preventDefault();
+      socket.emit('reiniciarJogo');
+    })
     socket.on('esconderBotaoComecar', function () {
       $("#botaoComecarJogo").hide()
       $("#time").show()
@@ -541,7 +550,14 @@
       document.getElementById("classeJogador").innerHTML = ""
       document.getElementById("messages").innerHTML = ""
     })
-
+    socket.on('limpaTelaReiniciar', function () {
+      $("#botaoComecarJogo").hide()
+      $("#time").hide()
+      document.getElementById("rodada").innerHTML = ""
+      document.getElementById("logsJogo").innerHTML = ""
+      document.getElementById("classeJogador").innerHTML = ""
+      document.getElementById("messages").innerHTML = ""
+    })
 
     let game
     let jogadoresStatus = {players: ""}
@@ -582,6 +598,17 @@
       //Verifica se há mais de 3 jogadores, se o jogo nao foi iniciado e se é o dono da sala
       if (totalPlayersCount>=3 && rodada==0 && socket.id == donoDaSala_socketID) {
         $("#botaoComecarJogo").show()
+      }
+      if (socket.id == donoDaSala_socketID) {
+        $("#botaoReiniciarJogo").show()
+      }
+      if (totalPlayersCount == 0) {
+        $("#botaoComecarJogo").hide()
+        $("#time").hide()
+        document.getElementById("rodada").innerHTML = ""
+        document.getElementById("logsJogo").innerHTML = ""
+        document.getElementById("classeJogador").innerHTML = ""
+        document.getElementById("messages").innerHTML = ""
       }
     })
 

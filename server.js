@@ -8,10 +8,10 @@ const io = require('socket.io')(webServer)
 const game = createGame()
 let maxConcurrentConnections = 15
 let messages = []
-let resumoPartida = []
 let votosDoDia = []
 let rodada = 0
 let donoDaSala_socketID = ""
+let reiniciar = 0
 
 webApp.get('/', function(req, res){
   res.sendFile(__dirname + '/game.html')
@@ -20,7 +20,6 @@ webApp.get('/', function(req, res){
 setInterval(() => {
   io.emit('concurrent-connections', io.engine.clientsCount, rodada, donoDaSala_socketID)
 }, 5000)
-
 
 io.on('connection', function(socket){
   const playerName = socket.handshake.query.userName
@@ -32,6 +31,7 @@ io.on('connection', function(socket){
   } else {
     socket.emit('hide-max-concurrent-connections-message')
   }
+
   if (io.engine.clientsCount == 1){
     donoDaSala_socketID = socket.id
   }
@@ -45,14 +45,13 @@ io.on('connection', function(socket){
   if (rodada!=0) {
     socket.emit('atualizarRodada', rodada);
   }
-//envia para uma pessoa que entrou depois, os acontecimentos anteriores
-  socket.emit('previousResumoPartida', resumoPartida);
 //funcao para enviar mensagem para o chat publico
   socket.on('sendMessage', data =>{
       console.log(data);
       messages.push(data);
       socket.broadcast.emit('receivedMessage', data);
   })
+
 //funcao que gera um numero randomico
   function getRandomInt(min, max) {
     min = Math.ceil(min);
@@ -65,7 +64,6 @@ io.on('connection', function(socket){
     var nomeClasseObject = {}
     for (socketId in game.players) {
       nomeClasseObject[socketId] = {
-        donoDaSala : game.players[socketId].donoDaSala,
         playerName : game.players[socketId].playerName,
         vivo : game.players[socketId].vivo,
         classe : game.players[socketId].classe
@@ -74,36 +72,52 @@ io.on('connection', function(socket){
     return nomeClasseObject
   }
   //Envia para o front qual classe ganhou o jogo
-    function alguemGanhou(classeGanhadora){
-      var classeGanhouObject = {
-            author: "JOGO",
-            message: classeGanhadora +" ganhou",
-      };
-      enviarMensagemFront(classeGanhouObject)
-      //Para o timer no front
-      socket.emit('pararTimer');
-      socket.broadcast.emit('pararTimer');
-      //Envia para o front o nome e classe de todos depois que acaba o jogo
-      var nomeClasseMessage = {}
-      for (socketId in game.players) {
-        nomeClasseMessage[socketId] = {
-          author : "JOGO",
-          message: game.players[socketId].playerName +" era um " +game.players[socketId].classe,
-        }
+  function alguemGanhou(classeGanhadora){
+    var classeGanhouObject = {
+          author: "JOGO",
+          message: classeGanhadora +" ganhou",
+    };
+    enviarMensagemFront(classeGanhouObject)
+    //Para o timer no front
+    socket.emit('pararTimer');
+    socket.broadcast.emit('pararTimer');
+    //Envia para o front o nome e classe de todos depois que acaba o jogo
+    var nomeClasseMessage = {}
+    for (socketId in game.players) {
+      nomeClasseMessage[socketId] = {
+        author : "JOGO",
+        message: game.players[socketId].playerName +" era um " +game.players[socketId].classe,
       }
-      socket.emit('nomeClasseTodos', nomeClasseMessage);
-      socket.broadcast.emit('nomeClasseTodos', nomeClasseMessage);
-      socket.emit('novaPartida', donoDaSala_socketID);
-      socket.broadcast.emit('novaPartida', donoDaSala_socketID);
-
     }
+    socket.emit('nomeClasseTodos', nomeClasseMessage);
+    socket.broadcast.emit('nomeClasseTodos', nomeClasseMessage);
+    socket.emit('novaPartida', donoDaSala_socketID);
+    socket.broadcast.emit('novaPartida', donoDaSala_socketID);
+    rodada = 0
+  }
 //envia para o front a mensagem do parametro
   function enviarMensagemFront(mensagem){
     messages.push(mensagem);
     socket.emit('receivedMessage', mensagem);
     socket.broadcast.emit('receivedMessage', mensagem);
   }
-//Envia para o front o perfil de todos o jogadores atualizado
+  socket.on('reiniciarJogo', data =>{
+    reiniciar = 1
+    socket.emit('limpaTelaReiniciar')
+    socket.broadcast.emit('limpaTelaReiniciar')
+    //Reseta o perfil de todos os jogadores
+    for (socketId in game.players) {
+      game.players[socketId].vivo = 1
+      game.players[socketId].classe = ""
+    }
+    socket.emit('player-update', nomeClasse())
+    socket.broadcast.emit('player-update', nomeClasse())
+    //Limpa todas as variaveis
+      messages = []
+      votosDoDia = []
+      rodada = 0
+  })
+//Chama a funcao sorteioClasses para iniciar o jogo
   socket.on('sorteioClasses', data =>{
       sorteioClasses()
   })
@@ -121,7 +135,6 @@ io.on('connection', function(socket){
     socket.broadcast.emit('player-update', nomeClasse())
     //Limpa todas as variaveis
       messages = []
-      resumoPartida = []
       votosDoDia = []
       rodada = 0
     //Escolhe um jogador aleatorio para ser o assassino e torna o resto inocente
@@ -163,6 +176,14 @@ io.on('connection', function(socket){
   let tempoDuracao = 12000
 
   function noite() {
+    //Verifica se ainda tem jogadores na sala
+    if (io.engine.clientsCount == 0 || reiniciar == 1) {
+      messages = []
+      votosDoDia = []
+      rodada = 0
+      reiniciar = 0
+      return
+    }
     //Atualiza a rodada todo inicio de noite
     rodada+=1
     socket.emit('atualizarRodada', rodada);
@@ -210,6 +231,7 @@ io.on('connection', function(socket){
         return
       }
     }
+
     //Envia para o front o perfil de todos os jogadores
     socket.emit('acoesNoite', nomeClasse());
     socket.broadcast.emit('acoesNoite', nomeClasse());
@@ -232,6 +254,14 @@ io.on('connection', function(socket){
   })
 
   function amanhecer() {
+    //Verifica se ainda tem jogadores na sala
+    if (io.engine.clientsCount == 0 || reiniciar == 1) {
+      messages = []
+      votosDoDia = []
+      rodada = 0
+      reiniciar = 0
+      return
+    }
     //Gera um log de inicio do amanhecer no front e no back
     var mensagemJogo = {
           author: "JOGO",
@@ -272,6 +302,7 @@ io.on('connection', function(socket){
       alguemGanhou("Assassino")
       return
     }
+
     //Starta o time de amanhecer no front
     socket.emit('receivedTempoAmanhecer');
     socket.broadcast.emit('receivedTempoAmanhecer');
@@ -279,6 +310,14 @@ io.on('connection', function(socket){
   }
 
   function votacao() {
+    //Verifica se ainda tem jogadores na sala
+    if (io.engine.clientsCount == 0 || reiniciar == 1) {
+      messages = []
+      votosDoDia = []
+      rodada = 0
+      reiniciar = 0
+      return
+    }
     //Gera log de periodo de votacao
     var mensagemJogo = {
           author: "JOGO",
@@ -299,6 +338,14 @@ io.on('connection', function(socket){
 
   var jogadorMaisVotado = ""
   function defesa() {
+    //Verifica se ainda tem jogadores na sala
+    if (io.engine.clientsCount == 0 || reiniciar == 1) {
+      messages = []
+      votosDoDia = []
+      rodada = 0
+      reiniciar = 0
+      return
+    }
     //verifica se houveram votos
     if(votosDoDia.length){
       //inicializa variaveis auxiliares para a contagem de votos
@@ -351,6 +398,14 @@ io.on('connection', function(socket){
 
 
   function segundaVotacao() {
+    //Verifica se ainda tem jogadores na sala
+    if (io.engine.clientsCount == 0 || reiniciar == 1) {
+      messages = []
+      votosDoDia = []
+      rodada = 0
+      reiniciar = 0
+      return
+    }
     //fera log de confirmacao no front e no back
     var mensagemJogo = {
           author: "JOGO",
@@ -371,6 +426,7 @@ io.on('connection', function(socket){
           }
         }
       }
+
       //envia para o front quem foi o mais votado
       socket.emit('segundaVotacao', jogadorMaisVotadoObject, nomeClasse());
       socket.broadcast.emit('segundaVotacao', jogadorMaisVotadoObject, nomeClasse());
