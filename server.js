@@ -247,10 +247,21 @@ io.on('connection', function(socket){
           for (socketId in game.players) {
             if(game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima){
               game.players[socketId].vivo = 0
+              socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
+              socket.broadcast.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
             }
           }
         }
       }
+  })
+
+  socket.on('enviarDiarioDoMortoBack', diarioMorto =>{
+      console.log(diarioMorto)
+      mensagemDoDiario = {
+        author : "JOGO",
+        message : "Diário: " + diarioMorto
+      }
+      enviarMensagemFront(mensagemDoDiario)
   })
 
   function amanhecer() {
