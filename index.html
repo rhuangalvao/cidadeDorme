@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vila Dorme</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rampart+One&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<style>
+    html {
+        height: 100%;
+    }
+
+    body {
+        height: 100%;
+    }
+
+    .principal {
+        height: 10em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+
+    .container {
+        height: 100%;
+    }
+
+    .titulo {
+        font-size: 100px;
+        font-family: 'Rampart One', cursive;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <div class="principal">
+            <form action="/jogo" method="get">
+                <h1 class="titulo">Vila Dorme </h1>
+                <br>
+                <div class="row g-3">
+                    <div class="col-9">
+                        <label for="nome" class="visually-hidden">Qual o seu nome?</label>
+                        <input type="text" class="form-control" id="nome" aria-label="Large"
+                            placeholder="Qual o seu nome?">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-dark mb-3 confirmar"
+                            onclick="confirmar()">Confirmar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <script>
+
+        function confirmar() {
+            let nome = $('#nome').val();
+            if (nome != '') {
+                console.log(nome)
+                sessionStorage.setItem('NickName', nome || AnominoBR)
+
+                // window.location.href = "http://localhost:3000/jogo";
+
+            } else {
+
+            }
+
+        }
+
+
+
+
+    </script>
+
+</body>
+
+
+
+</html>
