@@ -95,6 +95,11 @@
       overflow: auto;
       text-align: start;
     }
+    .quantidadeClasse{
+      text-align: center;
+      font-size: 20px;
+      width: 60px;
+    }
 
     #vivos-table {
       font-size: 18px;
@@ -243,6 +248,64 @@
       <div class="col-6">
         <div id="game-container">
           <form style='display: none;' id="botaoComecarJogo">
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Mafioso">Mafioso</span>
+              <input name="Mafioso" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Incriminador">Incriminador</span>
+              <input name="Incriminador" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Chefe">Chefe</span>
+              <input name="Chefe" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Louco">Louco</span>
+              <input name="Louco" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Mercenário">Mercenário</span>
+              <input name="Mercenário" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="SerialKiller">SerialKiller</span>
+              <input name="SerialKiller" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Carcereiro">Carcereiro</span>
+              <input name="Carcereiro" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Sheriff">Sheriff</span>
+              <input name="Sheriff" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Investigador">Investigador</span>
+              <input name="Investigador" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Olheiro">Olheiro</span>
+              <input name="Olheiro" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Médico">Médico</span>
+              <input name="Médico" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Medium">Medium</span>
+              <input name="Medium" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Bloqueador">Bloqueador</span>
+              <input name="Bloqueador" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+            <div style="width: 70%; display: flex; justify-content: space-between;">
+              <span class="Transportador">Transportador</span>
+              <input name="Transportador" type="number" min="0" max="1" value="0" class="form-control quantidadeClasse">
+            </div>
+
             <div id="botaoJogo">
               <button class="btn btn-success" type="submit">Começar Jogo</button>
             </div>
@@ -551,17 +614,46 @@
         renderMessage(messageObject);
         socket.emit('sendMessage', messageObject);
         //Limpar campo de mensagem após envio da mensagem:
-        $('input[name=message]').val('');
+        $('input[name=message]').val('')
 
       }
     })
 
+    // function escolhaClasses(){
+    //   let aux = 0
+    //   for (var i = 0; i < classesDisponiveis.length; i++) {
+    //     aux += parseInt($('input[name='+classesDisponiveis[i]+']').val())
+    //   }
+    //   var faltaEscolher =  totalPlayersCount - aux
+    //   for (var i = 0; i < classesDisponiveis.length; i++) {
+    //     $('input[name='+classesDisponiveis[i]+']').attr('max', faltaEscolher)
+    //   }
+    // }
+
     let totalPlayersCount = ''
+    let classesDisponiveis = ["Mafioso", "Incriminador", "Chefe", "Louco", "Mercenário", "SerialKiller", "Carcereiro", "Sheriff", "Investigador", "Olheiro", "Médico", "Medium", "Bloqueador", "Transportador"]
+
     $('#botaoComecarJogo').submit(function (event) {
       event.preventDefault();
-      socket.emit('sorteioClasses');
-      $("#botaoComecarJogo").hide()
+      let aux = 0
+      for (var i = 0; i < classesDisponiveis.length; i++) {
+        aux += parseInt($('input[name='+classesDisponiveis[i]+']').val())
+      }
+      if (totalPlayersCount == aux) {
+        var quantClassesEscolhidas = {}
+        for (var i = 0; i < classesDisponiveis.length; i++) {
+          quantClassesEscolhidas[i] = {
+                classe: classesDisponiveis[i],
+                quantidade: parseInt($('input[name='+classesDisponiveis[i]+']').val()),
+          };
+           parseInt($('input[name='+classesDisponiveis[i]+']').val())
+        }
+        console.log(quantClassesEscolhidas);
+        socket.emit('sorteioClasses', quantClassesEscolhidas)
+        $("#botaoComecarJogo").hide()
+      }
     })
+
     $('#botaoReiniciarJogo').submit(function (event) {
       event.preventDefault();
       socket.emit('reiniciarJogo');

@@ -13,13 +13,122 @@ let rodada = 0
 let donoDaSala_socketID = ""
 let reiniciar = 0
 
+let classeTipoObjetivo = [
+  {
+    classe: "Mafioso",
+    alinhamento: "Máfia",
+    objetivo: "Matar todos que não façam parte da mafia",
+    habilidades: "Seguir as ordens do Godfather",
+    atributos: "Você pode atacar livremente caso o Godfather não lhe de ordens, caso o Godfather morra você se tornará o próximo Godfather, você pode falar com os outros membros da mafia"
+  },
+  {
+    classe: "Incriminador",
+    alinhamento: "Máfia",
+    objetivo: "Matar todos que não façam parte da mafia",
+    habilidades: "Escolher alguém pra implantar provas falsas durante a noite",
+    atributos: "Se seu alvo for investigado na mesma noite ele irá aparecer como suspeito, se não houver nenhum mafioso capaz de matar você se tornará mafioso, você pode falar com os outros membros da mafia"
+  },
+  {
+    classe: "Chefe",
+    alinhamento: "Máfia",
+    objetivo: "Matar todos que não façam parte da mafia",
+    habilidades: "Dar ordens para o mafioso atacar seu alvo",
+    atributos: "Caso seja interrogado pelo Sheriff você irá aparecer como inocente, você pode falar com outros membros da mafia durante a noite, caso não tenha nenhum mafioso vivo você atacará seu alvo com as próprias mãos"
+  },
+  {
+    classe: "Louco",
+    alinhamento: "Neutro",
+    objetivo: "Ser linchado a qualquer custo",
+    habilidades: "Convencer a cidade a te linchar",
+    atributos: "Se você for linchado você ganha o jogo"
+  },
+  {
+    classe: "Mercenário",
+    alinhamento: "Neutro",
+    objetivo: "Linchar seu alvo a qualquer custo",
+    habilidades: "Nenhuma",
+    atributos: "No começo da partida você receberá um alvo aleatório, seu objetivo é convencer a cidade a linchar seu alvo, se seu alvo for morto durante a noite você se tornará um Jester, caso você tenha cumprido seu objetivo, você ganha o jogo"
+  },
+  {
+    classe: "SerialKiller",
+    alinhamento: "Neutro",
+    objetivo: "Matar todo mundo",
+    habilidades: "Escolher um jogador para atacar durante a noite",
+    atributos: "Caso você seja bloqueado você irá atacar quem te bloqueou ao invés do seu alvo"
+  },
+  {
+    classe: "Carcereiro",
+    alinhamento: "Cidade",
+    objetivo: "Linchar todos criminosos e mal feitores",
+    habilidades: "Durante o dia você pode escolher uma pessoa para prender a noite",
+    atributos: "Você pode falar anonimamente com o prisioneiro, você pode matar o prisioneiro, o prisioneiro não pode executar sua habilidade noturna"
+  },
+  {
+    classe: "Sheriff",
+    alinhamento: "Cidade",
+    objetivo: "Linchar todos criminosos e mal feitores",
+    habilidades: "Interrogar uma pessoa por noite",
+    atributos: "Você saberá se a pessoa é suspeita"
+  },
+  {
+    classe: "Investigador",
+    alinhamento: "Cidade",
+    objetivo: "Linchar todos criminosos e mal feitores",
+    habilidades: "Investigar uma pessoa por noite para tentar encontrar pistas de seu personagem",
+    atributos: "Nenhum"
+  },
+  {
+    classe: "Olheiro",
+    alinhamento: "Cidade",
+    objetivo: "Linchar todos criminosos e mal feitores",
+    habilidades: "Espiar uma pessoa por noite para ver quem visitou ela",
+    atributos: "Nenhum"
+  },
+  {
+    classe: "Médico",
+    alinhamento: "Cidade",
+    objetivo: "Linchar todos criminosos e mal feitores",
+    habilidades: "Curar uma pessoa por noite",
+    atributos: "Você pode se curar uma vez durante a partida inteira, você saberá se seu alvo foi atacado"
+  },
+  {
+    classe: "Medium",
+    alinhamento: "Cidade",
+    objetivo: "Linchar todos criminosos e mal feitores",
+    habilidades: "Falar com os mortos anonimamente durante a noite",
+    atributos: "Você poderá escolher algum vivo pra falar uma única vez após morrer"
+  },
+  {
+    classe: "Bloqueador",
+    alinhamento: "Cidade",
+    objetivo: "Linchar todos criminosos e mal feitores",
+    habilidades: "Distrair uma pessoa por noite pra impedir que ela execute sua habilidade",
+    atributos: "Você não pode ser bloqueado"
+  },
+  {
+    classe: "Transportador",
+    alinhamento: "Cidade",
+    objetivo: "Linchar todos criminosos e mal feitores",
+    habilidades: "Troca dois jogadores de lugar",
+    atributos: "Quando você troca dois jogadores de lugar, as ações que iriam ser feitas em um, serão feitas no outro"
+  },
+
+]
+
+// let classesmafia = ["mafioso", "framer", "godfather"]
+// let classesneutro = ["jester", "executioner", "serial killer"]
+let classesDisponiveis = ["Mafioso", "Incriminador", "Chefe", "Louco", "Mercenário", "SerialKiller", "Carcereiro", "Sheriff", "Investigador", "Olheiro", "Médico", "Medium", "Bloqueador", "Transportador"]
+let classesMafia = ["Mafioso", "Incriminador", "Chefe"]
+let classesNeutro = ["Louco", "Mercenário", "Serial Killer"]
+let classesBem = ["Carcereiro", "Sheriff", "Investigador", "Olheiro", "Médico", "Medium", "Bloqueador", "Transportador"]
+
 webApp.get('/', function(req, res){
   res.sendFile(__dirname + '/game.html')
 })
 
 setInterval(() => {
   io.emit('concurrent-connections', io.engine.clientsCount, rodada, donoDaSala_socketID)
-}, 5000)
+}, 3000)
 
 io.on('connection', function(socket){
   const playerName = socket.handshake.query.userName
@@ -119,10 +228,11 @@ io.on('connection', function(socket){
   })
 //Chama a funcao sorteioClasses para iniciar o jogo
   socket.on('sorteioClasses', data =>{
-      sorteioClasses()
+      sorteioClasses(data)
   })
 
-  function sorteioClasses() {     // Função que executa quando começa o jogo
+  function sorteioClasses(quantClassesEscolhidas) {     // Função que executa quando começa o jogo
+
     // Esconde o botão começar jogo no front
     socket.emit('esconderBotaoComecar');
     socket.broadcast.emit('esconderBotaoComecar');
@@ -134,35 +244,84 @@ io.on('connection', function(socket){
     socket.emit('player-update', nomeClasse())
     socket.broadcast.emit('player-update', nomeClasse())
     //Limpa todas as variaveis
-      messages = []
-      votosDoDia = []
-      rodada = 0
-    //Escolhe um jogador aleatorio para ser o assassino e torna o resto inocente
+    messages = []
+    votosDoDia = []
+    rodada = 0
+    //Filtra quais classes foram escolhidas pelo front
+    let classesEscolhidas = []
+    for (i in quantClassesEscolhidas) {
+      if (quantClassesEscolhidas[i].quantidade == 1) {
+        classesEscolhidas.push(quantClassesEscolhidas[i].classe)
+      }
+    }
+    console.log(classesEscolhidas)
+    //Guarda num array o nome de todos os jogadores
     var jogadores = []
     for (socketId in game.players) {
       jogadores.push(game.players[socketId].playerName)
     }
-    var quantidadeJogadores = jogadores.length
-    let jogadorRandomico = getRandomInt(0, quantidadeJogadores-1)
-    for (socketId in game.players) {
-      if(game.players[socketId].playerName == jogadores[jogadorRandomico]){
-        game.players[socketId].classe = "Assassino"
+    //Aleatoriza a ordem do array com os nomes
+    for (let i = 0; i < jogadores.length; i++) {
+       const j = Math.floor(Math.random() * (i + 1));
+       [jogadores[i], jogadores[j]] = [jogadores[j], jogadores[i]];
+    }
+    //Dá para cara jogador uma classe
+    for (var i = 0; i < classesEscolhidas.length; i++) {
+      for (socketId in game.players) {
+        if(game.players[socketId].playerName == jogadores[i]){
+          game.players[socketId].classe = classesEscolhidas[i]
+        }
       }
     }
-    for (socketId in game.players) {
-      if(game.players[socketId].classe != "Assassino"){
-        game.players[socketId].classe = "Inocente"
-      }
-    }
+    //Escolhe um jogador aleatorio para ser o assassino e torna o resto inocente
+    // let jogadorRandomico = getRandomInt(0, jogadores.length - 1)
+    // for (socketId in game.players) {
+    //   if(game.players[socketId].playerName == jogadores[jogadorRandomico]){
+    //     game.players[socketId].classe = "Assassino"
+    //   }
+    // }
+    // for (socketId in game.players) {
+    //   if(game.players[socketId].classe != "Assassino"){
+    //     game.players[socketId].classe = "Inocente"
+    //   }
+    // }
 //Manda para cada jogador sua classe especifica
     for (socketId in game.players) {
       var classeObject = {
           author: game.players[socketId].playerName,
-          message: "Você é um " + game.players[socketId].classe,
+          message: "Você é o " + game.players[socketId].classe,
       };
       console.log(classeObject);
       socket.emit('receivedClasse', classeObject)
       socket.broadcast.emit('receivedClasse', classeObject)
+      for (var i = 0; i < classeTipoObjetivo.length; i++) {
+        if (game.players[socketId].classe == classeTipoObjetivo[i].classe) {
+          var alinhamentoObject = {
+              author: game.players[socketId].playerName,
+              message: "Alinhamento: " +classeTipoObjetivo[i].alinhamento,
+          };
+          var objetivoObject = {
+              author: game.players[socketId].playerName,
+              message: "Objetivo: " +classeTipoObjetivo[i].objetivo,
+          };
+          var habilidadesObject = {
+              author: game.players[socketId].playerName,
+              message: "Habilidade: " +classeTipoObjetivo[i].habilidades,
+          };
+          var atributosObject = {
+              author: game.players[socketId].playerName,
+              message: "Atributos: " +classeTipoObjetivo[i].atributos,
+          };
+          socket.emit('receivedClasse', alinhamentoObject)
+          socket.broadcast.emit('receivedClasse', alinhamentoObject)
+          socket.emit('receivedClasse', objetivoObject)
+          socket.broadcast.emit('receivedClasse', objetivoObject)
+          socket.emit('receivedClasse', habilidadesObject)
+          socket.broadcast.emit('receivedClasse', habilidadesObject)
+          socket.emit('receivedClasse', atributosObject)
+          socket.broadcast.emit('receivedClasse', atributosObject)
+        }
+      }
     }
 //Manda para o Front um objeto com todas informações dos jogadores no Inicio
     socket.emit('todosJogadoresInicio', nomeClasse())
@@ -362,18 +521,25 @@ io.on('connection', function(socket){
       //inicializa variaveis auxiliares para a contagem de votos
       var maisVotado = 0
       var nomeMaisVotado = ""
-      var segundoMaisVotado = 0
+      // var segundoMaisVotado = 0
       //conta os votos
       for (socketId in game.players) {
         aux = votosDoDia.filter(x => x === game.players[socketId].playerName).length;
         if (aux > maisVotado) {
-          segundoMaisVotado = maisVotado
+          // segundoMaisVotado = maisVotado
           maisVotado = aux
           nomeMaisVotado = game.players[socketId].playerName
         }
       }
+      //Conta quantas pessoas estão vivas
+      let quantidadeVivos = 0
+      for (socketId in game.players) {
+        if(game.players[socketId].vivo == 1){
+          quantidadeVivos += 1
+        }
+      }
       //verifica se houve alguem mais votado
-      if(maisVotado > segundoMaisVotado+1){
+      if(maisVotado >= ((quantidadeVivos/2)+0.5)){
         jogadorMaisVotado = nomeMaisVotado
       }
       //se houve alguem mais votado, envia log para o front
