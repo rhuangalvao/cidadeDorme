@@ -85,6 +85,16 @@
       overflow: auto;
       text-align: start;
     }
+    .anotacao {
+      width: 100%;
+      height: 200px;
+      margin: 20px 0;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+      overflow: auto;
+      text-align: start;
+    }
 
     #vivos-table {
       font-size: 18px;
@@ -223,6 +233,12 @@
         <div class="titulo">O que esta acontecendo!!</div>
         <br />
         <div id="logsJogo" class="logsJogo"></div>
+        <form id="diario">
+          <div class="titulo">Diário</div>
+          <div class="mensagemDiario">
+            <textarea class="anotacao" id="anotacaoDiario" name="anotacaoDiario" placeholder="Digite sua anotação..." cols="30" rows="5"></textarea>
+          </div>
+        </form>
       </div>
       <div class="col-6">
         <div id="game-container">
@@ -261,7 +277,7 @@
         <div id="classeJogador" class="classeJogador">
         </div>
         <hr>
-        <form class="" id="chat">
+        <form id="chat">
           <div class="titulo">Chat </div>
           <div id="messages" class="messages">
           </div>
@@ -269,13 +285,11 @@
             <input class="form-control digite" type="text" name="message" placeholder="Digite sua mensagem...">
             <button class="btn btn-success " type="submit">Enviar</button>
           </div>
+        </form>
       </div>
-      </form>
     </div>
-
   </div>
-
-  </div>
+</div>
 
   <script>
     //funcao para gerar o timer
@@ -362,6 +376,15 @@
     socket.on('novaPartida', function (donoDaSala_socketID) {
       if (socket.id == donoDaSala_socketID) {
         $("#botaoComecarJogo").show()
+      }
+    })
+    socket.on('buscarDiarioDoMorto', function (nomeDoMorto) {
+      if (playerName == nomeDoMorto) {
+        var diarioMorto = $('#anotacaoDiario').val()
+        // var diarioMorto = document.getElementsByName("anotacaoDiario");
+        console.log(diarioMorto)
+        socket.emit('enviarDiarioDoMortoBack',diarioMorto);
+        socket.broadcast.emit('enviarDiarioDoMortoBack',diarioMorto);
       }
     })
 
