@@ -327,11 +327,41 @@
           <form id="acoesNoite">
             <div id="acoes"></div>
           </form>
+          <form id="acoesDia">
+            <div id="acoesDoDia"></div>
+          </form>
           <form id="votacao">
             <div id="escolhaVotacao"></div>
           </form>
           <form id="segundaVotacao">
             <div id="escolhaSegundaVotacao"></div>
+          </form>
+          <form style='display: none;' id="chatMafia">
+            <div class="titulo">Chat Mafia</div>
+            <div id="messagesMafia" class="messagesMafia">
+            </div>
+            <div class="mensagemChatMafia">
+              <input class="form-control digite" type="text" name="messageMafia" placeholder="Digite sua mensagem...">
+              <button class="btn btn-success " type="submit">Enviar</button>
+            </div>
+          </form>
+          <form style='display: none;' id="chatMortos">
+            <div class="titulo">Chat Mortos</div>
+            <div id="messagesMortos" class="messagesMortos">
+            </div>
+            <div class="mensagemChatMortos">
+              <input class="form-control digite" type="text" name="messageMortos" placeholder="Digite sua mensagem...">
+              <button class="btn btn-success " type="submit">Enviar</button>
+            </div>
+          </form>
+          <form style='display: none;' id="chatCarcereiro">
+            <div class="titulo">Chat Carcereiro</div>
+            <div id="messagesCarcereiro" class="messagesCarcereiro">
+            </div>
+            <div class="mensagemChatCarcereiro">
+              <input class="form-control digite" type="text" name="messageCarcereiro" placeholder="Digite sua mensagem...">
+              <button class="btn btn-success " type="submit">Enviar</button>
+            </div>
           </form>
         </div>
       </div>
@@ -406,8 +436,34 @@
         let height = el.scrollHeight;
         el.scrollTop = height;
       }
-
     }
+    function renderMessageMafia(message){
+      $('.messagesMafia').append('<div class="message"><b>' + message.author + ': </b> ' + message.message + '</div>')
+      let el = document.querySelector('.messagesMafia');
+      let height = el.scrollHeight;
+      el.scrollTop = height;
+    }
+    socket.on('receivedMessageMafia', function (message) {
+      renderMessageMafia(message)
+    })
+    function renderMessageMortos(message){
+      $('.messagesMortos').append('<div class="message"><b>' + message.author + ': </b> ' + message.message + '</div>')
+      let el = document.querySelector('.messagesMortos');
+      let height = el.scrollHeight;
+      el.scrollTop = height;
+    }
+    socket.on('receivedMessageMortos', function (message) {
+      renderMessageMortos(message)
+    })
+    function renderMessageCarcereiro(message){
+      $('.messagesCarcereiro').append('<div class="message"><b>' + message.author + ': </b> ' + message.message + '</div>')
+      let el = document.querySelector('.messagesCarcereiro');
+      let height = el.scrollHeight;
+      el.scrollTop = height;
+    }
+    socket.on('receivedMessageCarcereiro', function (message) {
+      renderMessageCarcereiro(message)
+    })
     socket.on('previousMessages', function (messages) {
       for (message of messages) {
         renderMessage(message)
@@ -441,6 +497,15 @@
         $("#botaoComecarJogo").show()
       }
     })
+    socket.on('receivedAlvoMercenario', function (alvoMercenario, nomeMercenario) {
+      if (nomeMercenario == playerName) {
+        let messageAlvo = {
+          author: "CLASSE",
+          message: "Seu alvo é "+ alvoMercenario,
+        }
+        renderMessage(messageAlvo)
+      }
+    })
     socket.on('buscarDiarioDoMorto', function (nomeDoMorto) {
       if (playerName == nomeDoMorto) {
         var diarioMorto = $('#anotacaoDiario').val()
@@ -451,21 +516,48 @@
       }
     })
 
-    let tempoDuracao = 12000
+    let tempoDuracao = 120000
 
-    socket.on('acoesNoite', function (nomeClasse) {
+    socket.on('acoesNoite', function (nomeClasse, vitimaDoCarcereiro) {
       jQuery(function ($) {
         var tempo = tempoDuracao / 4000,
           display = $('#time');
         startTimer(tempo, display);
       });
       setTimeout(function () { $("#acoes").hide(); }, tempoDuracao / 4);
+      setTimeout(function () { $("#chatMafia").hide(); }, tempoDuracao / 4);
+      setTimeout(function () { $("#chatCarcereiro").hide(); }, tempoDuracao / 4);
+
+      if (vitimaDoCarcereiro == playerName) {
+        $('#chatCarcereiro').show()
+        console.log("Abre o chat do Carcereiro");
+      }
+
+      for (var property in nomeClasse){
+        if (nomeClasse[property].vivo == 0) {
+          $('#chatMortos').show()
+        }
+      }
       //percorre todos os perfis
       for (var property in nomeClasse) {
         //verifica se é o player local
         if (nomeClasse[property].playerName == playerName) {
           //verifica a classe dele
-          if (nomeClasse[property].classe == "Assassino") {
+          if (nomeClasse[property].classe == "Mafioso" || nomeClasse[property].classe == "Chefe") {
+            document.getElementById("acoes").innerHTML = ""
+            $('#acoes').show()
+            $('#chatMafia').show()
+            for (var destino in nomeClasse){
+              if (nomeClasse[destino].playerName != playerName){
+                document.getElementById("acoes").innerHTML +=
+                "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
+                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+              }
+            }
+            document.getElementById("acoes").innerHTML +=
+                "<button type='submit'>Matar</button>"
+          }
+          if (nomeClasse[property].classe == "SerialKiller") {
             document.getElementById("acoes").innerHTML = ""
             $('#acoes').show()
             for (var destino in nomeClasse){
@@ -478,6 +570,81 @@
             document.getElementById("acoes").innerHTML +=
                 "<button type='submit'>Matar</button>"
           }
+          if (nomeClasse[property].classe == "Incriminador") {
+            document.getElementById("acoes").innerHTML = ""
+            $('#acoes').show()
+            $('#chatMafia').show()
+            for (var destino in nomeClasse){
+              if (nomeClasse[destino].playerName != playerName){
+                document.getElementById("acoes").innerHTML +=
+                "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
+                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+              }
+            }
+            document.getElementById("acoes").innerHTML +=
+                "<button type='submit'>Incriminar</button>"
+          }
+          if (nomeClasse[property].classe == "Sheriff" || nomeClasse[property].classe == "Investigador" || nomeClasse[property].classe == "Olheiro") {
+            document.getElementById("acoes").innerHTML = ""
+            $('#acoes').show()
+            for (var destino in nomeClasse){
+              if (nomeClasse[destino].playerName != playerName){
+                document.getElementById("acoes").innerHTML +=
+                "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
+                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+              }
+            }
+            document.getElementById("acoes").innerHTML +=
+                "<button type='submit'>Investigar</button>"
+          }
+          if (nomeClasse[property].classe == "Médico") {
+            document.getElementById("acoes").innerHTML = ""
+            $('#acoes').show()
+            for (var destino in nomeClasse){
+              if (nomeClasse[destino].playerName != playerName){
+                document.getElementById("acoes").innerHTML +=
+                "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
+                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+              }
+            }
+            document.getElementById("acoes").innerHTML +=
+                "<button type='submit'>Curar</button>"
+          }
+          if (nomeClasse[property].classe == "Bloqueador") {
+            document.getElementById("acoes").innerHTML = ""
+            $('#acoes').show()
+            for (var destino in nomeClasse){
+              if (nomeClasse[destino].playerName != playerName){
+                document.getElementById("acoes").innerHTML +=
+                "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
+                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+              }
+            }
+            document.getElementById("acoes").innerHTML +=
+                "<button type='submit'>Bloquear</button>"
+          }
+          if (nomeClasse[property].classe == "Transportador") {
+            document.getElementById("acoes").innerHTML = ""
+            document.getElementById("acoes").innerHTML +=
+              "<p>Marque apenas 2 jogadores para transportar</p>"
+            $('#acoes').show()
+            for (var destino in nomeClasse){
+              if (nomeClasse[destino].playerName != playerName){
+                document.getElementById("acoes").innerHTML +=
+                "<div><input type='checkbox' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
+                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+              }
+            }
+            document.getElementById("acoes").innerHTML +=
+                "<button type='submit'>Transportar</button>"
+          }
+          if (nomeClasse[property].classe == "Medium") {
+            $('#chatMortos').show()
+            setTimeout(function () { $("#chatMortos").hide(); }, tempoDuracao / 4)
+          }
+          if (nomeClasse[property].classe == "Carcereiro") {
+            $('#chatCarcereiro').show()
+          }
         }
       }
     })
@@ -486,23 +653,98 @@
       event.preventDefault()
       //Pega qual jogador ele escolheu
       var radios = document.getElementsByName("vitima");
+      var contadorChecks = 0
+      var vitima = ""
+      var vitima2 = ""
       for (var i = 0; i < radios.length; i++) {
         if (radios[i].checked) {
-          var vitima = radios[i].value
+          if (contadorChecks == 0) {
+            vitima = radios[i].value
+            contadorChecks +=1
+          }else if (contadorChecks == 1) {
+            vitima2 = radios[i].value
+            contadorChecks +=1
+          }
+        }
+      }
+      //Manda para o back a ação
+      if (contadorChecks <=2) {
+        if (vitima2 == null) {
+          var author = playerName
+          var qualAcao = "assassinato"
+          var acaoObject = {
+            author: author,
+            qualAcao: qualAcao,
+            vitima: vitima,
+          };
+        }else{
+          var author = playerName
+          var qualAcao = "assassinato"
+          var acaoObject = {
+            author: author,
+            qualAcao: qualAcao,
+            vitima: vitima,
+            vitima2: vitima2,
+          };
+        }
+        socket.emit('sendAcaoNoite', acaoObject);
+      }
+
+      //Limpar campo de mensagem após envio da mensagem:
+      $("#acoes").hide()
+    })
+
+    socket.on('escolhaDoCarcereiro', function (nomeClasse, tempoDuracao) {
+      setTimeout(function () { $("#acoesDoDia").hide(); }, tempoDuracao);
+      for (var property in nomeClasse){
+        if (nomeClasse[property].playerName == playerName) {
+          if (nomeClasse[property].classe == "Carcereiro") {
+            document.getElementById("acoesDoDia").innerHTML = ""
+            $('#acoesDoDia').show()
+            for (var destino in nomeClasse){
+              if (nomeClasse[destino].playerName != playerName){
+                document.getElementById("acoesDoDia").innerHTML +=
+                "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
+                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+              }
+            }
+            document.getElementById("acoesDoDia").innerHTML +=
+                "<button type='submit'>Interrogar</button>"
+          }
+        }
+      }
+    })
+
+    $('#acoesDia').submit(function (event) {
+      event.preventDefault()
+      //Pega qual jogador ele escolheu
+      var radios = document.getElementsByName("vitima");
+      var vitima = ""
+      for (var i = 0; i < radios.length; i++) {
+        if (radios[i].checked) {
+            vitima = radios[i].value
         }
       }
       //Manda para o back a ação
       var author = playerName
-      var qualAcao = "assassinato"
+      var qualAcao = "Carcereiro"
       var acaoObject = {
         author: author,
         qualAcao: qualAcao,
         vitima: vitima,
       };
-      socket.emit('sendAcaoNoite', acaoObject);
+      socket.emit('sendAcaoDia', acaoObject);
+
       //Limpar campo de mensagem após envio da mensagem:
-      $("#acoes").hide()
-      $('input[name=vitima]').val('')
+      $("#acoesDia").hide()
+    })
+
+    socket.on('receivedTempoPrimeiroDia', function (tempoDuracao) {
+      jQuery(function ($) {
+        var tempo = (tempoDuracao / 1000) - 1,
+          display = $('#time');
+        startTimer(tempo, display);
+      });
     })
 
     //Ativa o timer para o tempo do amanhecer
@@ -616,6 +858,52 @@
         //Limpar campo de mensagem após envio da mensagem:
         $('input[name=message]').val('')
 
+      }
+    })
+    $('#chatMafia').submit(function (event) {
+      event.preventDefault();
+      var author = playerName;
+      var message = $('input[name=messageMafia]').val();
+      if (author.length && message.length) {
+        var messageObject = {
+          author: author,
+          message: message,
+        };
+        renderMessageMafia(messageObject);
+        socket.emit('sendMessageMafia', messageObject);
+        //Limpar campo de mensagem após envio da mensagem:
+        $('input[name=messageMafia]').val('')
+
+      }
+    })
+    $('#chatMortos').submit(function (event) {
+      event.preventDefault();
+      var author = playerName;
+      var message = $('input[name=messageMortos]').val();
+      if (author.length && message.length) {
+        var messageObject = {
+          author: author,
+          message: message,
+        };
+        renderMessageMortos(messageObject);
+        socket.emit('sendMessageMortos', messageObject);
+        //Limpar campo de mensagem após envio da mensagem:
+        $('input[name=messageMortos]').val('')
+      }
+    })
+    $('#chatCarcereiro').submit(function (event) {
+      event.preventDefault();
+      var author = playerName;
+      var message = $('input[name=messageCarcereiro]').val();
+      if (author.length && message.length) {
+        var messageObject = {
+          author: author,
+          message: message,
+        };
+        renderMessageCarcereiro(messageObject);
+        socket.emit('sendMessageCarcereiro', messageObject);
+        //Limpar campo de mensagem após envio da mensagem:
+        $('input[name=messageCarcereiro]').val('')
       }
     })
 
