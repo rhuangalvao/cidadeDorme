@@ -43,18 +43,15 @@
 <body>
     <div class="container">
         <div class="principal">
-            <form action="/lobby" method="post">
-                <h1 class="titulo">Vila Dorme </h1>
+            <form action="/jogo" method="get">
+                <h1 class="titulo">Lobby </h1>
                 <br>
-                <div class="row g-3">
+                <div class="row g-3" id="jogadores">
                     <div class="col-9">
-                        <label for="nome" class="visually-hidden">Qual o seu nome?</label>
-                        <input type="text" class="form-control" id="nome" aria-label="Large"
-                            placeholder="Qual o seu nome?">
+
                     </div>
                     <div class="col-auto">
-                        <button type="submit" class="btn btn-dark mb-3 confirmar"
-                            onclick="confirmar()">Confirmar</button>
+                        <button type="submit" class="btn btn-dark mb-3 confirmar" onclick="confirmar()">Começar</button>
                     </div>
                 </div>
             </form>
@@ -64,20 +61,43 @@
 
     <script>
 
-        function confirmar() {
-            let nome = $('#nome').val();
-            if (nome != '') {
-                console.log(nome)
-                sessionStorage.setItem('NickName', nome || AnominoBR)
+        const scoreArray = []
 
-                // window.location.href = "http://localhost:3000/jogo";
+        init();
 
-            } else {
-
-            }
-
+        function init() {
+            getNickName()
+            criaTabela()
         }
 
+        //funcao para pegar o nome do novo jogador
+        function getNickName(defaultValue = "Anônimo") {
+            const readNickName = sessionStorage.getItem('NickName') || prompt('Digite seu nick:')
+            sessionStorage.setItem('NickName', readNickName || defaultValue)
+            return sessionStorage.getItem('NickName')
+        }
+
+
+        function criaTabela() {
+
+
+            console.log(getNickName())
+
+            scoreArray.push(getNickName())
+
+            document.getElementById('jogadores').innerHTML = '';
+
+            scoreArray.forEach((score) => {
+                document.getElementById('jogadores').innerHTML =
+                    `
+                     <tr">
+                    <td class="score-value">${score}</td>
+                    </tr>
+                `
+
+            })
+
+        }
 
 
 

@@ -85,6 +85,7 @@
       overflow: auto;
       text-align: start;
     }
+
     .anotacao {
       width: 100%;
       height: 200px;
@@ -95,7 +96,8 @@
       overflow: auto;
       text-align: start;
     }
-    .quantidadeClasse{
+
+    .quantidadeClasse {
       text-align: center;
       font-size: 20px;
       width: 60px;
@@ -241,7 +243,8 @@
         <form id="diario">
           <div class="titulo">Diário</div>
           <div class="mensagemDiario">
-            <textarea class="anotacao" id="anotacaoDiario" name="anotacaoDiario" placeholder="Digite sua anotação..." cols="30" rows="5"></textarea>
+            <textarea class="anotacao" id="anotacaoDiario" name="anotacaoDiario" placeholder="Digite sua anotação..."
+              cols="30" rows="5"></textarea>
           </div>
         </form>
       </div>
@@ -352,7 +355,7 @@
       </div>
     </div>
   </div>
-</div>
+  </div>
 
   <script>
     //funcao para gerar o timer
@@ -394,7 +397,7 @@
         let el = document.querySelector('.logsJogo');
         let height = el.scrollHeight;
         el.scrollTop = height;
-      }else if (message.author == 'CLASSE') {
+      } else if (message.author == 'CLASSE') {
         $('.classeJogador').append('<div class="message"><b>' + message.message + '</div>')
         let el = document.querySelector('.classeJogador');
         let height = el.scrollHeight;
@@ -418,7 +421,7 @@
     })
     socket.on('atualizarRodada', function (rodada) {
       document.getElementById("rodada").innerHTML =
-        "<h5>Dia "+rodada+"</h5>"
+        "<h5>Dia " + rodada + "</h5>"
     })
     socket.on('receivedClasse', function (message) {
       if (message.author == playerName) {
@@ -446,8 +449,8 @@
         var diarioMorto = $('#anotacaoDiario').val()
         // var diarioMorto = document.getElementsByName("anotacaoDiario");
         console.log(diarioMorto)
-        socket.emit('enviarDiarioDoMortoBack',diarioMorto);
-        socket.broadcast.emit('enviarDiarioDoMortoBack',diarioMorto);
+        socket.emit('enviarDiarioDoMortoBack', diarioMorto);
+        socket.broadcast.emit('enviarDiarioDoMortoBack', diarioMorto);
       }
     })
 
@@ -468,15 +471,15 @@
           if (nomeClasse[property].classe == "Assassino") {
             document.getElementById("acoes").innerHTML = ""
             $('#acoes').show()
-            for (var destino in nomeClasse){
-              if (nomeClasse[destino].playerName != playerName){
+            for (var destino in nomeClasse) {
+              if (nomeClasse[destino].playerName != playerName) {
                 document.getElementById("acoes").innerHTML +=
-                "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
-                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+                  "<div><input type='radio' id=" + nomeClasse[destino].playerName + " name='vitima' value=" + nomeClasse[destino].playerName + ">" +
+                  "<label for=" + nomeClasse[destino].playerName + ">" + nomeClasse[destino].playerName + "</label>"
               }
             }
             document.getElementById("acoes").innerHTML +=
-                "<button type='submit'>Matar</button>"
+              "<button type='submit'>Matar</button>"
           }
         }
       }
@@ -527,15 +530,15 @@
           if (nomeClasse[property].vivo == 1) {
             document.getElementById("escolhaVotacao").innerHTML = ""
             $('#escolhaVotacao').show()
-            for (var destino in nomeClasse){
-              if (nomeClasse[destino].playerName != playerName){
+            for (var destino in nomeClasse) {
+              if (nomeClasse[destino].playerName != playerName) {
                 document.getElementById("escolhaVotacao").innerHTML +=
-                "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='expulsado' value="+nomeClasse[destino].playerName+">" +
-                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+                  "<div><input type='radio' id=" + nomeClasse[destino].playerName + " name='expulsado' value=" + nomeClasse[destino].playerName + ">" +
+                  "<label for=" + nomeClasse[destino].playerName + ">" + nomeClasse[destino].playerName + "</label>"
               }
             }
             document.getElementById("escolhaVotacao").innerHTML +=
-                "<button type='submit'>Expulsar</button>"
+              "<button type='submit'>Expulsar</button>"
           }
         }
       }
@@ -637,16 +640,16 @@
       event.preventDefault();
       let aux = 0
       for (var i = 0; i < classesDisponiveis.length; i++) {
-        aux += parseInt($('input[name='+classesDisponiveis[i]+']').val())
+        aux += parseInt($('input[name=' + classesDisponiveis[i] + ']').val())
       }
       if (totalPlayersCount == aux) {
         var quantClassesEscolhidas = {}
         for (var i = 0; i < classesDisponiveis.length; i++) {
           quantClassesEscolhidas[i] = {
-                classe: classesDisponiveis[i],
-                quantidade: parseInt($('input[name='+classesDisponiveis[i]+']').val()),
+            classe: classesDisponiveis[i],
+            quantidade: parseInt($('input[name=' + classesDisponiveis[i] + ']').val()),
           };
-           parseInt($('input[name='+classesDisponiveis[i]+']').val())
+          parseInt($('input[name=' + classesDisponiveis[i] + ']').val())
         }
         console.log(quantClassesEscolhidas);
         socket.emit('sorteioClasses', quantClassesEscolhidas)
@@ -675,7 +678,7 @@
     })
 
     let game
-    let jogadoresStatus = {players: ""}
+    let jogadoresStatus = { players: "" }
     const scoreTable = document.getElementById('vivos-table')
     const scoreTableMortos = document.getElementById('mortos-table')
 
@@ -711,7 +714,7 @@
       totalPlayersCount = concurrentConnections
       updateScoreTable(game)
       //Verifica se há mais de 3 jogadores, se o jogo nao foi iniciado e se é o dono da sala
-      if (totalPlayersCount>=3 && rodada==0 && socket.id == donoDaSala_socketID) {
+      if (totalPlayersCount >= 3 && rodada == 0 && socket.id == donoDaSala_socketID) {
         $("#botaoComecarJogo").show()
       }
       if (socket.id == donoDaSala_socketID) {
@@ -761,13 +764,13 @@
         })
       }
       scoreArray.forEach((score) => {
-        if(score.vivo == 1){
+        if (score.vivo == 1) {
           scoreTableInnerHTML += `
                         <tr class="${socket.id === score.socketId ? 'current-player' : ''}">
                         <td class="score-value">${score.playerName}</td>
                         </tr>
                     `
-        }else{
+        } else {
           scoreTableMortosInnerHTML += `
                         <tr class="${socket.id === score.socketId ? 'current-player' : ''}">
                         <td class="score-value">${score.playerName}</td>

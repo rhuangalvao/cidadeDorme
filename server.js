@@ -126,14 +126,17 @@ webApp.get('/jogo', function (req, res) {
   res.sendFile(__dirname + '/game.html')
 })
 
+webApp.get(`/jogo/:id`, function (req, res) {
+  res.sendFile(__dirname + '/game.html')
+})
+
 webApp.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html')
 })
 
-webApp.post('/jogo', (req, res) => {
-  res.sendFile(__dirname, '/game.html');
-  //sessionStorage.setItem('NickName', res || 'defaultValue')
-});
+webApp.post('/lobby', function (req, res) {
+  res.sendFile(__dirname + '/lobby.html')
+})
 
 setInterval(() => {
   io.emit('concurrent-connections', io.engine.clientsCount, rodada, donoDaSala_socketID)
