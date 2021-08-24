@@ -12,6 +12,8 @@ let votosDoDia = []
 let rodada = 0
 let donoDaSala_socketID = ""
 let reiniciar = 0
+let alvoMercenario = ""
+var vitimaDoCarcereiro = ""
 
 let classeTipoObjetivo = [
   {
@@ -172,6 +174,18 @@ io.on('connection', function (socket) {
     messages.push(data);
     socket.broadcast.emit('receivedMessage', data);
   })
+  socket.on('sendMessageMafia', data => {
+    console.log(data);
+    socket.broadcast.emit('receivedMessageMafia', data);
+  })
+  socket.on('sendMessageMortos', data => {
+    console.log(data);
+    socket.broadcast.emit('receivedMessageMortos', data);
+  })
+  socket.on('sendMessageCarcereiro', data => {
+    console.log(data);
+    socket.broadcast.emit('receivedMessageCarcereiro', data);
+  })
 
   //funcao que gera um numero randomico
   function getRandomInt(min, max) {
@@ -286,27 +300,29 @@ io.on('connection', function (socket) {
         }
       }
     }
-    //Escolhe um jogador aleatorio para ser o assassino e torna o resto inocente
-    // let jogadorRandomico = getRandomInt(0, jogadores.length - 1)
-    // for (socketId in game.players) {
-    //   if(game.players[socketId].playerName == jogadores[jogadorRandomico]){
-    //     game.players[socketId].classe = "Assassino"
-    //   }
-    // }
-    // for (socketId in game.players) {
-    //   if(game.players[socketId].classe != "Assassino"){
-    //     game.players[socketId].classe = "Inocente"
-    //   }
-    // }
+    //Filtra os jogadores para escolher um alvo para o Mercenario
+    let jogadoresClasseCidade = []
+    for (socketId in game.players) {
+      for (var i = 0; i < classesBem.length; i++) {
+        if (game.players[socketId].classe == classesBem[i]) {
+          jogadoresClasseCidade.push(game.players[socketId].playerName)
+        }
+      }
+    }
     //Manda para cada jogador sua classe especifica
     for (socketId in game.players) {
       var classeObject = {
         author: game.players[socketId].playerName,
         message: "Você é o " + game.players[socketId].classe,
       };
-      console.log(classeObject);
       socket.emit('receivedClasse', classeObject)
       socket.broadcast.emit('receivedClasse', classeObject)
+      console.log(classeObject);
+      if (game.players[socketId].classe == "Mercenário") {
+        alvoMercenario = jogadoresClasseCidade[getRandomInt(0, jogadoresClasseCidade.length)]
+        socket.emit('receivedAlvoMercenario', alvoMercenario, game.players[socketId].playerName)
+        socket.broadcast.emit('receivedAlvoMercenario', alvoMercenario, game.players[socketId].playerName)
+      }
       for (var i = 0; i < classeTipoObjetivo.length; i++) {
         if (game.players[socketId].classe == classeTipoObjetivo[i].classe) {
           var alinhamentoObject = {
@@ -340,12 +356,29 @@ io.on('connection', function (socket) {
     socket.emit('todosJogadoresInicio', nomeClasse())
     socket.broadcast.emit('todosJogadoresInicio', nomeClasse())
     //Chama a noite
-    noite()
+    primeiroDia()
   }
   //Inicializa o array de votos<sim ou nao> da segunda votacao(confirmacao)
   var votosConfimarExpulsao = []
   //Tempo de duraçao base
-  let tempoDuracao = 12000
+  let tempoDuracao = 120000
+
+  function primeiroDia() {
+    socket.emit('escolhaDoCarcereiro', nomeClasse(), tempoDuracao / 8);
+    socket.broadcast.emit('escolhaDoCarcereiro', nomeClasse(), tempoDuracao / 8);
+    socket.emit('receivedTempoPrimeiroDia', tempoDuracao / 8);
+    socket.broadcast.emit('receivedTempoPrimeiroDia', tempoDuracao / 8);
+    setTimeout(function () { noite(); }, tempoDuracao / 8);
+  }
+
+  socket.on('sendAcaoDia', data => {
+    console.log(data)
+    for (socketId in game.players) {
+      if (game.players[socketId].playerName == data.vitima) {
+        vitimaDoCarcereiro = game.players[socketId].playerName
+      }
+    }
+  })
 
   function noite() {
     //Verifica se ainda tem jogadores na sala
@@ -387,27 +420,54 @@ io.on('connection', function (socket) {
     jogadorMaisVotado = ""
     //Verifica se há apenas 2 pessoas vivas e 1 delas é ossassino
     let quantidadeVivos = 0
+    let classePlayersVivos = []
     for (socketId in game.players) {
       if (game.players[socketId].vivo == 1) {
         quantidadeVivos += 1
+        classePlayersVivos.push(game.players[socketId].classe)
       }
     }
     if (quantidadeVivos <= 2) {
-      alguemGanhou("Assassino")
+      for (var i = 0; i < classePlayersVivos.length; i++) {
+        if (classePlayersVivos[i] == "SerialKiller") {
+          alguemGanhou("SerialKiller")
+          return
+        }
+      }
+      for (var i = 0; i < classePlayersVivos.length; i++) {
+        if (classePlayersVivos[i] == "Mafioso" || classePlayersVivos[i] == "Incriminador" || classePlayersVivos[i] == "Chefe") {
+          alguemGanhou("Máfia")
+          return
+        }
+      }
+      alguemGanhou("Cidade")
       return
     }
-    //Verifica se o assassino esta morto
+    //Verifica se os assassinos estão mortos
+    let assassinosVivos = 0
     for (socketId in game.players) {
-      if (game.players[socketId].classe == "Assassino" && game.players[socketId].vivo == 0) {
-        alguemGanhou("Inocente")
-        return
+      if (game.players[socketId].classe == "Mafioso" && game.players[socketId].vivo == 1) {
+        assassinosVivos += 1
+      }
+      if (game.players[socketId].classe == "Incriminador" && game.players[socketId].vivo == 1) {
+        assassinosVivos += 1
+      }
+      if (game.players[socketId].classe == "Chefe" && game.players[socketId].vivo == 1) {
+        assassinosVivos += 1
+      }
+      if (game.players[socketId].classe == "SerialKiller" && game.players[socketId].vivo == 1) {
+        assassinosVivos += 1
       }
     }
-
+    if (assassinosVivos == 0) {
+      alguemGanhou("Cidade")
+      return
+    }
     //Envia para o front o perfil de todos os jogadores
-    socket.emit('acoesNoite', nomeClasse());
-    socket.broadcast.emit('acoesNoite', nomeClasse());
+    socket.emit('acoesNoite', nomeClasse(), vitimaDoCarcereiro);
+    socket.broadcast.emit('acoesNoite', nomeClasse(), vitimaDoCarcereiro);
     console.log(nomeClasse())
+    vitimaDoCarcereiro = ""
     setTimeout(function () { amanhecer(); }, tempoDuracao / 4);
   }
   //Realiza acoes que vieram do front
@@ -486,6 +546,8 @@ io.on('connection', function (socket) {
       return
     }
 
+    socket.emit('escolhaDoCarcereiro', nomeClasse(), tempoDuracao);
+    socket.broadcast.emit('escolhaDoCarcereiro', nomeClasse(), tempoDuracao);
     //Starta o time de amanhecer no front
     socket.emit('receivedTempoAmanhecer');
     socket.broadcast.emit('receivedTempoAmanhecer');
