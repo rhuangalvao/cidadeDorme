@@ -287,6 +287,40 @@ io.on('connection', function(socket){
         }
       }
     }
+
+    //Verifica se existe mafioso, senao existir troca classes dos outros membros da mafia
+    var existeMafioso = 0
+    var existeIncriminador = 0
+    var existeChefe = 0
+    for (socketId in game.players){
+      if (game.players[socketId].classe == "Mafioso") {
+        existeMafioso = 1
+      }
+      if (game.players[socketId].classe == "Incriminador") {
+        existeIncriminador = 1
+      }
+      if (game.players[socketId].classe == "Chefe") {
+        existeChefe = 1
+      }
+    }
+    if (existeMafioso == 0) {
+      if (existeChefe == 0) {
+        if (existeIncriminador == 1) {
+          for (socketId in game.players){
+            if (game.players[socketId].classe == "Incriminador") {
+              game.players[socketId].classe = "Mafioso"
+            }
+          }
+        }
+      }else {
+        for (socketId in game.players){
+          if (game.players[socketId].classe == "Chefe") {
+            game.players[socketId].classe = "Mafioso"
+          }
+        }
+      }
+    }
+
 //Filtra os jogadores para escolher um alvo para o Mercenario
     let jogadoresClasseCidade = []
     for (socketId in game.players) {
@@ -410,6 +444,12 @@ io.on('connection', function(socket){
                   message: game.players[socketId].playerName + " --foi morto por votacao e ele era "+ game.players[socketId].classe,
             };
             enviarMensagemFront(mortoVotacaoObject)
+            mensagemDoDiario = {
+              author : "JOGO",
+              message : "Diário de "+ game.players[socketId].playerName +": " + game.players[socketId].diario
+            }
+            enviarMensagemFront(mensagemDoDiario)
+            game.players[socketId].diario = ""
             //Se o jester for expulso por votacao, ele ganha
             if (game.players[socketId].classe == "Jester") {
               alguemGanhou("Jester")
@@ -519,7 +559,7 @@ io.on('connection', function(socket){
                   author : game.players[socketId].playerName,
                   message : "Você foi bloqueado!"
                 }
-                socket.emit('mensagemAcaoNoite',mensagemDoBloqueado);
+                //socket.emit('mensagemAcaoNoite',mensagemDoBloqueado);
                 socket.broadcast.emit('mensagemAcaoNoite',mensagemDoBloqueado);
               }
             }
@@ -549,13 +589,13 @@ io.on('connection', function(socket){
               author : game.addAcoesOcorreramNoite[author].vitima,
               message : "Você foi transportada"
             }
-            socket.emit('mensagemAcaoNoite',mensagemDoTransportador1);
+            //socket.emit('mensagemAcaoNoite',mensagemDoTransportador1);
             socket.broadcast.emit('mensagemAcaoNoite',mensagemDoTransportador1);
             mensagemDoTransportado2 = {
               author : game.addAcoesOcorreramNoite[author].vitima2,
               message :  "Você foi transportada"
             }
-            socket.emit('mensagemAcaoNoite',mensagemDoTransportado2);
+            //socket.emit('mensagemAcaoNoite',mensagemDoTransportado2);
             socket.broadcast.emit('mensagemAcaoNoite',mensagemDoTransportado2);
             for (author2 in game.addAcoesOcorreramNoite){
               if (game.addAcoesOcorreramNoite[author].vitima == game.addAcoesOcorreramNoite[author2].vitima) {
@@ -590,12 +630,12 @@ io.on('connection', function(socket){
               author : game.addAcoesOcorreramNoite[author].author,
               message : "Você tentou bloquearo SerialKiller, mas morreu!"
             }
-            socket.emit('mensagemAcaoNoite',mensagemDoBloqueado);
+            //socket.emit('mensagemAcaoNoite',mensagemDoBloqueado);
             socket.broadcast.emit('mensagemAcaoNoite',mensagemDoBloqueado);
             for (socketId in game.players) {
               if (game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].author){
                 game.players[socketId].vivo = 0
-                socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
+                //socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
                 socket.broadcast.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
               }
             }
@@ -604,7 +644,7 @@ io.on('connection', function(socket){
               author : auxVitima,
               message : "Você foi bloqueado!"
             }
-            socket.emit('mensagemAcaoNoite',mensagemDoBloqueado);
+            //socket.emit('mensagemAcaoNoite',mensagemDoBloqueado);
             socket.broadcast.emit('mensagemAcaoNoite',mensagemDoBloqueado);
             for (author2 in game.addAcoesOcorreramNoite){
               if (game.addAcoesOcorreramNoite[author2].author == auxVitima) {
@@ -631,7 +671,7 @@ io.on('connection', function(socket){
             for (socketId in game.players){
               if (game.players[socketId].playerName == vitimaDoCarcereiro) {
                 game.players[socketId].vivo = 0
-                socket.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
+                //socket.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
                 socket.broadcast.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
               }
             }
@@ -653,7 +693,7 @@ io.on('connection', function(socket){
                 author : game.players[socketId].playerName,
                 message : "Você foi curado pelo médico!"
               }
-              socket.emit('mensagemAcaoNoite',mensagemDoCurado);
+              //socket.emit('mensagemAcaoNoite',mensagemDoCurado);
               socket.broadcast.emit('mensagemAcaoNoite',mensagemDoCurado);
             }
             //se ele foi visitado pelo médico, prendo ele
@@ -688,14 +728,14 @@ io.on('connection', function(socket){
             if (game.addAcoesOcorreramNoite[author].acao == "Mafioso") {
               if (curado == 0 && prisao == 0) {
                 game.players[socketId].vivo = 0
-                socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
+                //socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
                 socket.broadcast.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
               }
             }
             if (game.addAcoesOcorreramNoite[author].acao == "SerialKiller") {
               if (curado == 0 && prisao == 0 && bloqueouSerialKiller == 0) {
                 game.players[socketId].vivo = 0
-                socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
+                //socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
                 socket.broadcast.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
               }
             }
@@ -729,28 +769,28 @@ io.on('connection', function(socket){
               author : game.addAcoesOcorreramNoite[author].author,
               message : nomeCerto + " é uma das seguintes classes: " + classeCerta + ", " + classeErrada1 + ", "+ classeErrada2
             }
-            socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
+            //socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
             socket.broadcast.emit('mensagemAcaoNoite',mensagemDoInvestigador);
           }else if (auxNumeroAleatorio == 1) {
             mensagemDoInvestigador = {
               author : game.addAcoesOcorreramNoite[author].author,
               message : nomeCerto + " é uma das seguintes classes: " + classeErrada1 + ", "+ classeErrada2 + ", " + classeCerta
             }
-            socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
+            //socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
             socket.broadcast.emit('mensagemAcaoNoite',mensagemDoInvestigador);
           }else if(auxNumeroAleatorio == 2){
             mensagemDoInvestigador = {
               author : game.addAcoesOcorreramNoite[author].author,
               message : nomeCerto + " é uma das seguintes classes: " + classeErrada1 + ", " + classeCerta + ", "+ classeErrada2
             }
-            socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
+            //socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
             socket.broadcast.emit('mensagemAcaoNoite',mensagemDoInvestigador);
           }else {
             mensagemDoInvestigador = {
               author : game.addAcoesOcorreramNoite[author].author,
               message : nomeCerto + " é uma das seguintes classes: " + classeErrada2 + ", " + classeCerta + ", "+ classeErrada1
             }
-            socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
+            //socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
             socket.broadcast.emit('mensagemAcaoNoite',mensagemDoInvestigador);
           }
         }
@@ -769,7 +809,7 @@ io.on('connection', function(socket){
             author : game.addAcoesOcorreramNoite[author].author,
             message : visitaramVitimaOlheiro + "visitaram sua vítima"
           }
-          socket.emit('mensagemAcaoNoite',mensagemDoOlheiro);
+          //socket.emit('mensagemAcaoNoite',mensagemDoOlheiro);
           socket.broadcast.emit('mensagemAcaoNoite',mensagemDoOlheiro);
         }
       }
@@ -799,13 +839,13 @@ io.on('connection', function(socket){
       }
   })
 
-  socket.on('enviarDiarioDoMortoBack', diarioMorto =>{
+  socket.on('enviarDiarioDoMortoBack', diarioMorto, playerMorto =>{
       console.log(diarioMorto)
-      mensagemDoDiario = {
-        author : "JOGO",
-        message : "Diário: " + diarioMorto
+      for (socketId in game.players){
+        if (game.players[socketId].playerName == playerMorto) {
+          game.players[socketId].diario = diarioMorto
+        }
       }
-      enviarMensagemFront(mensagemDoDiario)
   })
 
   function amanhecer() {
@@ -836,6 +876,12 @@ io.on('connection', function(socket){
               message : "O jogador "+game.players[socketId].playerName+" foi assassinado pela Máfia, e ele era "+ game.players[socketId].classe
             }
             enviarMensagemFront(mensagemAcoes)
+            mensagemDoDiario = {
+              author : "JOGO",
+              message : "Diário de "+ game.players[socketId].playerName +": " + game.players[socketId].diario
+            }
+            enviarMensagemFront(mensagemDoDiario)
+            game.players[socketId].diario = ""
           }
           if(game.addAcoesOcorreramNoite[author].acao == "SerialKiller"){
             mensagemAcoes = {
@@ -843,6 +889,12 @@ io.on('connection', function(socket){
               message : "O jogador "+game.players[socketId].playerName+" foi assassinado pelo SerialKiller, e ele era "+ game.players[socketId].classe
             }
             enviarMensagemFront(mensagemAcoes)
+            mensagemDoDiario = {
+              author : "JOGO",
+              message : "Diário de "+ game.players[socketId].playerName +": " + game.players[socketId].diario
+            }
+            enviarMensagemFront(mensagemDoDiario)
+            game.players[socketId].diario = ""
           }
 
         }
@@ -853,6 +905,12 @@ io.on('connection', function(socket){
               message : "O jogador "+game.players[socketId].playerName+" foi assassinado pelo Carcereiro, e ele era "+ game.players[socketId].classe
             }
             enviarMensagemFront(mensagemAcoes)
+            mensagemDoDiario = {
+              author : "JOGO",
+              message : "Diário de "+ game.players[socketId].playerName +": " + game.players[socketId].diario
+            }
+            enviarMensagemFront(mensagemDoDiario)
+            game.players[socketId].diario = ""
           }
         }
       }
@@ -1122,6 +1180,7 @@ function createGame() {
     return game.players[socketId] = {
       playerName : playerName,
       classe : "",
+      diario: "",
       vivo : 1
     }
   }

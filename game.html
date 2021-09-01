@@ -514,10 +514,8 @@
     socket.on('buscarDiarioDoMorto', function (nomeDoMorto) {
       if (playerName == nomeDoMorto) {
         var diarioMorto = $('#anotacaoDiario').val()
-        // var diarioMorto = document.getElementsByName("anotacaoDiario");
-        console.log(diarioMorto)
-        socket.emit('enviarDiarioDoMortoBack',diarioMorto);
-        socket.broadcast.emit('enviarDiarioDoMortoBack',diarioMorto);
+        socket.emit('enviarDiarioDoMortoBack', diarioMorto, nomeDoMorto);
+        socket.broadcast.emit('enviarDiarioDoMortoBack', diarioMorto, nomeDoMorto);
       }
     })
 
@@ -687,9 +685,9 @@
       }
       //Manda para o back a ação
       if (contadorChecks <=2) {
-        if (vitima2 == null) {
+        if (vitima2 == "") {
           var author = playerName
-          var qualAcao = "assassinato"
+          var qualAcao = "Outros"
           var acaoObject = {
             author: author,
             qualAcao: qualAcao,
@@ -975,6 +973,9 @@
     socket.on('limpaTelaReiniciar', function () {
       $("#botaoComecarJogo").hide()
       $("#time").hide()
+      $("#acoes").hide()
+      $("#chatMafia").hide()
+      $("#chatCarcereiro").hide()
       document.getElementById("rodada").innerHTML = ""
       document.getElementById("logsJogo").innerHTML = ""
       document.getElementById("classeJogador").innerHTML = ""
