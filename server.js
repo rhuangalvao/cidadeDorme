@@ -839,11 +839,11 @@ io.on('connection', function(socket){
       }
   })
 
-  socket.on('enviarDiarioDoMortoBack', diarioMorto, playerMorto =>{
-      console.log(diarioMorto)
+  socket.on('enviarDiarioDoMortoBack', data =>{
+      console.log(data.diarioMorto)
       for (socketId in game.players){
-        if (game.players[socketId].playerName == playerMorto) {
-          game.players[socketId].diario = diarioMorto
+        if (game.players[socketId].playerName == data.nomeDoMorto) {
+          game.players[socketId].diario = data.diarioMorto
         }
       }
   })
