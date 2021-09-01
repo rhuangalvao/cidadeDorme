@@ -448,6 +448,8 @@ io.on('connection', function(socket){
                   message: game.players[socketId].playerName + " --foi morto por votacao e ele era "+ game.players[socketId].classe,
             };
             enviarMensagemFront(mortoVotacaoObject)
+            socket.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
+            socket.broadcast.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
             mensagemDoDiario = {
               author : "JOGO",
               message : "Diário de "+ game.players[socketId].playerName +": " + game.players[socketId].diario
