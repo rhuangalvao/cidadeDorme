@@ -995,7 +995,7 @@ io.on('connection', function(socket){
     //Starta o time de amanhecer no front
     socket.emit('receivedTempoAmanhecer');
     socket.broadcast.emit('receivedTempoAmanhecer');
-    setTimeout(function(){ votacao(); }, tempoDuracao);
+    setTimeout(function(){ votacao(); }, tempoDuracao/8);
   }
 
   function votacao() {

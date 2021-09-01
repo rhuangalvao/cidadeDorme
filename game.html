@@ -767,7 +767,7 @@
     //Ativa o timer para o tempo do amanhecer
     socket.on('receivedTempoAmanhecer', function () {
       jQuery(function ($) {
-        var tempo = tempoDuracao / 1000,
+        var tempo = tempoDuracao / 8000,
           display = $('#time');
         startTimer(tempo, display);
       });
