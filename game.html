@@ -482,7 +482,12 @@
         renderMessage(message)
       }
     })
-
+    socket.on('mensagemAcaoNoite', function (message) {
+      if (message.author == playerName) {
+        message.author = "JOGO"
+        renderMessage(message)
+      }
+    })
     socket.on('pararTimer', function (message) {
       startTimer(1, $('#time'))
       $("#time").hide()
@@ -530,6 +535,8 @@
 
       if (vitimaDoCarcereiro == playerName) {
         $('#chatCarcereiro').show()
+        setTimeout(function () { $("#acoes").hide(); }, 500);
+        setTimeout(function () { $("#chatMafia").hide(); }, 500);
         console.log("Abre o chat do Carcereiro");
       }
 
@@ -610,6 +617,17 @@
             document.getElementById("acoes").innerHTML +=
                 "<button type='submit'>Curar</button>"
           }
+          if (nomeClasse[property].classe == "Carcereiro") {
+            document.getElementById("acoes").innerHTML = ""
+            $('#acoes').show()
+            document.getElementById("acoes").innerHTML +=
+              "<p>Escolha se o prisioneiro deve ser morto:</p>" +
+              "<div><input type='radio' id='sim' name='vitima' value='sim'>" +
+              "<label for='sim'>Sim</label>" +
+              "<input type='radio' id='nao' name='vitima' value='nao'>" +
+              "<label for='nao'>Não</label></div>" +
+              "<div><button type='submit'>Enviar</button></div>"
+          }
           if (nomeClasse[property].classe == "Bloqueador") {
             document.getElementById("acoes").innerHTML = ""
             $('#acoes').show()
@@ -676,10 +694,11 @@
             author: author,
             qualAcao: qualAcao,
             vitima: vitima,
+            vitima2: "",
           };
         }else{
           var author = playerName
-          var qualAcao = "assassinato"
+          var qualAcao = "Transportador"
           var acaoObject = {
             author: author,
             qualAcao: qualAcao,
@@ -822,7 +841,7 @@
               "<label for='sim'>Sim</label>" +
               "<input type='radio' id='nao' name='confirmacao' value='nao'>" +
               "<label for='nao'>Não</label></div>" +
-              "<div><button type='submit'>Submit</button></div>"
+              "<div><button type='submit'>Enviar</button></div>"
           }
         }
       }
