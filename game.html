@@ -533,8 +533,8 @@
 
       if (vitimaDoCarcereiro == playerName) {
         $('#chatCarcereiro').show()
-        setTimeout(function () { $("#acoes").hide(); }, 500);
-        setTimeout(function () { $("#chatMafia").hide(); }, 500);
+        //setTimeout(function () { $("#acoes").hide(); }, 500);
+        //setTimeout(function () { $("#chatMafia").hide(); }, 500);
         console.log("Abre o chat do Carcereiro");
       }
 
@@ -546,7 +546,7 @@
       //percorre todos os perfis
       for (var property in nomeClasse) {
         //verifica se é o player local
-        if (nomeClasse[property].playerName == playerName) {
+        if (nomeClasse[property].playerName == playerName && playerName != vitimaDoCarcereiro) {
           //verifica a classe dele
           if (nomeClasse[property].classe == "Mafioso" || nomeClasse[property].classe == "Chefe") {
             document.getElementById("acoes").innerHTML = ""
