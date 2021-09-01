@@ -14,6 +14,9 @@ let donoDaSala_socketID = ""
 let reiniciar = 0
 let alvoMercenario = ""
 var vitimaDoCarcereiro = ""
+//Inicializa o array de votos<sim ou nao> da segunda votacao(confirmacao)
+var votosConfimarExpulsao = []
+
 
 let classeTipoObjetivo = [
   {
@@ -379,8 +382,6 @@ io.on('connection', function(socket){
 //Chama a noite
     primeiroDia()
   }
-//Inicializa o array de votos<sim ou nao> da segunda votacao(confirmacao)
-  var votosConfimarExpulsao = []
 //Tempo de duraçao base
   let tempoDuracao = 120000
 
@@ -427,15 +428,18 @@ io.on('connection', function(socket){
     //Verifica quantidade de votos de confirmacao <sim ou nao>
     if(votosConfimarExpulsao.length){
       var votosSim = votosConfimarExpulsao.filter(x => x === "sim").length;
+      console.log(votosConfimarExpulsao);
+      votosConfimarExpulsao = []
       //Conta quantas pessoas estão vivas
-      let quantidadeVivos = 0
+      let quantidadeVivosConfirmacao = 0
       for (socketId in game.players) {
         if(game.players[socketId].vivo == 1){
-          quantidadeVivos += 1
+          quantidadeVivosConfirmacao += 1
         }
       }
+      console.log(quantidadeVivosConfirmacao);
       //verifica se houve alguem mais votado
-      if(votosSim >= ((quantidadeVivos/2)+0.5)){
+      if(votosSim >= ((quantidadeVivosConfirmacao/2)+0.5)){
         for (socketId in game.players) {
           if (jogadorMaisVotado == game.players[socketId].playerName) {
             game.players[socketId].vivo = 0
@@ -533,310 +537,6 @@ io.on('connection', function(socket){
   socket.on('sendAcaoNoite', data =>{
       console.log(data)
       game.addAcoesOcorreramNoite(data.author,data.qualAcao,data.vitima,data.vitima2)
-      //Percorro as acoes e coloco as respectivas classes nos seus autores
-      for (author in game.addAcoesOcorreramNoite) {
-        for (socketId in game.players) {
-          if(game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].author){
-            game.addAcoesOcorreramNoite[author].acao = game.players[socketId].classe
-          }
-        }
-      }
-      // Verifico a acao do bloqueador, se ele bloqueia o Transportador
-      for (author in game.addAcoesOcorreramNoite) {
-        if (game.addAcoesOcorreramNoite[author].acao == "Bloqueador") {
-          for (socketId in game.players) {
-            if (game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima) {
-              if (game.players[socketId].classe == "Transportador") {
-                for (author2 in game.addAcoesOcorreramNoite){
-                  if (game.players[socketId].playerName == game.addAcoesOcorreramNoite[author2].author) {
-                    game.addAcoesOcorreramNoite[author2].author = ""
-                    game.addAcoesOcorreramNoite[author2].acao = ""
-                    game.addAcoesOcorreramNoite[author2].vitima = ""
-                    game.addAcoesOcorreramNoite[author2].vitima2 = ""
-                  }
-                }
-                mensagemDoBloqueado = {
-                  author : game.players[socketId].playerName,
-                  message : "Você foi bloqueado!"
-                }
-                //socket.emit('mensagemAcaoNoite',mensagemDoBloqueado);
-                socket.broadcast.emit('mensagemAcaoNoite',mensagemDoBloqueado);
-              }
-            }
-          }
-        }
-      }
-      // Verifico a acao do transportador
-      for (author in game.addAcoesOcorreramNoite) {
-        if (game.addAcoesOcorreramNoite[author].acao == "Transportador") {
-          var auxCarcereiro = 0
-          // Verifico se alguma das vitimas é vitima do carceirero
-          for (socketId in game.players){
-            if (game.addAcoesOcorreramNoite[author].vitima == game.players[socketId].playerName) {
-              if (game.players[socketId].classe == "Carcereiro") {
-                auxCarcereiro = 1
-              }
-            }
-            if (game.addAcoesOcorreramNoite[author].vitima2 == game.players[socketId].playerName) {
-              if (game.players[socketId].classe == "Carcereiro") {
-                auxCarcereiro = 1
-              }
-            }
-          }
-          // se uma das vitimas for presa pelo carcereiro nao troca elas
-          if (auxCarcereiro == 0) {
-            mensagemDoTransportador1 = {
-              author : game.addAcoesOcorreramNoite[author].vitima,
-              message : "Você foi transportada"
-            }
-            //socket.emit('mensagemAcaoNoite',mensagemDoTransportador1);
-            socket.broadcast.emit('mensagemAcaoNoite',mensagemDoTransportador1);
-            mensagemDoTransportado2 = {
-              author : game.addAcoesOcorreramNoite[author].vitima2,
-              message :  "Você foi transportada"
-            }
-            //socket.emit('mensagemAcaoNoite',mensagemDoTransportado2);
-            socket.broadcast.emit('mensagemAcaoNoite',mensagemDoTransportado2);
-            for (author2 in game.addAcoesOcorreramNoite){
-              if (game.addAcoesOcorreramNoite[author].vitima == game.addAcoesOcorreramNoite[author2].vitima) {
-                game.addAcoesOcorreramNoite[author2].vitima = game.addAcoesOcorreramNoite[author].vitima2
-              }
-              if (game.addAcoesOcorreramNoite[author].vitima2 == game.addAcoesOcorreramNoite[author2].vitima) {
-                game.addAcoesOcorreramNoite[author2].vitima = game.addAcoesOcorreramNoite[author].vitima
-              }
-            }
-          }
-        }
-      }
-
-      // Verifico a acao do bloqueador
-      var bloqueouSerialKiller = 0
-      for (author in game.addAcoesOcorreramNoite) {
-        if (game.addAcoesOcorreramNoite[author].acao == "Bloqueador") {
-          var auxVitima = ""
-          for (socketId in game.players) {
-            if (game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima) {
-              // se ele bloquear um serial killer, ele morre
-              if (game.players[socketId].classe == "SerialKiller") {
-                bloqueouSerialKiller = 1
-              }else {
-                auxVitima = game.addAcoesOcorreramNoite[author].vitima
-              }
-            }
-          }
-          // se for um serialkiller, bloqueador morre
-          if (bloqueouSerialKiller == 1) {
-            mensagemDoBloqueado = {
-              author : game.addAcoesOcorreramNoite[author].author,
-              message : "Você tentou bloquearo SerialKiller, mas morreu!"
-            }
-            //socket.emit('mensagemAcaoNoite',mensagemDoBloqueado);
-            socket.broadcast.emit('mensagemAcaoNoite',mensagemDoBloqueado);
-            for (socketId in game.players) {
-              if (game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].author){
-                game.players[socketId].vivo = 0
-                //socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
-                socket.broadcast.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
-              }
-            }
-          }else {     // se nao for serialkiller, exclui a acao da pessoa
-            mensagemDoBloqueado = {
-              author : auxVitima,
-              message : "Você foi bloqueado!"
-            }
-            //socket.emit('mensagemAcaoNoite',mensagemDoBloqueado);
-            socket.broadcast.emit('mensagemAcaoNoite',mensagemDoBloqueado);
-            for (author2 in game.addAcoesOcorreramNoite){
-              if (game.addAcoesOcorreramNoite[author2].author == auxVitima) {
-                game.addAcoesOcorreramNoite[author2].author = ""
-                game.addAcoesOcorreramNoite[author2].acao = ""
-                game.addAcoesOcorreramNoite[author2].vitima = ""
-                game.addAcoesOcorreramNoite[author2].vitima2 = ""
-              }
-            }
-          }
-        }
-      }
-      //Percorro quem foi incriminado
-      var auxIncriminado = ""
-      for (author in game.addAcoesOcorreramNoite) {
-        if (game.addAcoesOcorreramNoite[author].acao == "Incriminador") {
-          auxIncriminado = game.addAcoesOcorreramNoite[author].vitima
-        }
-      }
-      //Vejo se o carcereiro matou
-      for (author in game.addAcoesOcorreramNoite) {
-        if (game.addAcoesOcorreramNoite[author].acao == "Carcereiro") {
-          if (game.addAcoesOcorreramNoite[author].vitima == "sim") {
-            for (socketId in game.players){
-              if (game.players[socketId].playerName == vitimaDoCarcereiro) {
-                game.players[socketId].vivo = 0
-                //socket.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
-                socket.broadcast.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
-              }
-            }
-          }
-        }
-      }
-
-      //Percorro as açoes e verifico se a vitima foi curada
-      for (socketId in game.players) {
-        var curado = 0
-        var prisao = 0
-        var troqueiVitimaMafioso = 0
-        for (author in game.addAcoesOcorreramNoite) {
-          if(game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima){
-            //se ele foi visitado pelo médico, curo ele
-            if (game.addAcoesOcorreramNoite[author].acao == "Médico") {
-              curado = 1
-              mensagemDoCurado = {
-                author : game.players[socketId].playerName,
-                message : "Você foi curado pelo médico!"
-              }
-              //socket.emit('mensagemAcaoNoite',mensagemDoCurado);
-              socket.broadcast.emit('mensagemAcaoNoite',mensagemDoCurado);
-            }
-            //se ele foi visitado pelo médico, prendo ele
-            if (game.addAcoesOcorreramNoite[author].acao == "Carcereiro") {
-              prisao = 1
-            }
-            //se ele foi visitado pelo chefe da mafia, faço o mafioso receber ele como vitima
-            if (game.addAcoesOcorreramNoite[author].acao == "Chefe") {
-              for (author2 in game.addAcoesOcorreramNoite){
-                //se o mafioso realizou uma acao troco a vitima dele
-                if (game.addAcoesOcorreramNoite[author2].acao == "Mafioso") {
-                  game.addAcoesOcorreramNoite[author2].vitima = game.addAcoesOcorreramNoite[author].vitima
-                  troqueiVitimaMafioso = 1
-                }
-              }
-              //se o mafioso nao fez uma acao, eu crio ela agora
-              if (troqueiVitimaMafioso == 0) {
-                for (socketId2 in game.players)
-                if (game.players[socketId2].classe == "Mafioso") {
-                  game.addAcoesOcorreramNoite(game.players[socketId2].PlayerName,game.players[socketId2].classe,game.addAcoesOcorreramNoite[author].vitima,"")
-                }
-              }
-              // limpo a ficha do chefe da mafia
-              game.addAcoesOcorreramNoite[author].author = ""
-              game.addAcoesOcorreramNoite[author].acao = ""
-              game.addAcoesOcorreramNoite[author].vitima = ""
-            }
-          }
-        }
-        for (author in game.addAcoesOcorreramNoite) {
-          if(game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima){
-            if (game.addAcoesOcorreramNoite[author].acao == "Mafioso") {
-              if (curado == 0 && prisao == 0) {
-                game.players[socketId].vivo = 0
-                //socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
-                socket.broadcast.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
-              }
-            }
-            if (game.addAcoesOcorreramNoite[author].acao == "SerialKiller") {
-              if (curado == 0 && prisao == 0 && bloqueouSerialKiller == 0) {
-                game.players[socketId].vivo = 0
-                //socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
-                socket.broadcast.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
-              }
-            }
-          }
-        }
-      }
-      // manda para o investigador a classe da pessoa e mais 2 aleatorias
-      let classesBemInvestigavel = ["Carcereiro", "Sheriff", "Investigador", "Olheiro", "Médico", "Medium", "Bloqueador", "Transportador"]
-      let classesMafiaInvestigavel = ["Mafioso", "Incriminador", "Chefe"]
-      for (author in game.addAcoesOcorreramNoite) {
-        if (game.addAcoesOcorreramNoite[author].acao == "Investigador") {
-          var classeCerta = ""
-          var nomeCerto = ""
-          for (socketId in game.players) {
-            if (game.addAcoesOcorreramNoite[author].vitima == game.players[socketId].playerName) {
-              classeCerta = game.players[socketId].classe
-              nomeCerto = game.players[socketId].playerName
-            }
-          }
-          var classeErrada1 = classesBemInvestigavel[getRandomInt(0, classesBemInvestigavel.length)]
-          var classeErrada2 = classesMafiaInvestigavel[getRandomInt(0, classesMafiaInvestigavel.length)]
-          if (classeCerta == classeErrada1) {
-            classeErrada1 = classesBemInvestigavel[getRandomInt(1, classesBemInvestigavel.length)]
-          }
-          if (classeCerta == classeErrada2) {
-            classeErrada2 = classesMafiaInvestigavel[getRandomInt(1, classesMafiaInvestigavel.length)]
-          }
-          var auxNumeroAleatorio = getRandomInt(0,3)
-          if (auxNumeroAleatorio == 0) {
-            mensagemDoInvestigador = {
-              author : game.addAcoesOcorreramNoite[author].author,
-              message : nomeCerto + " é uma das seguintes classes: " + classeCerta + ", " + classeErrada1 + ", "+ classeErrada2
-            }
-            //socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
-            socket.broadcast.emit('mensagemAcaoNoite',mensagemDoInvestigador);
-          }else if (auxNumeroAleatorio == 1) {
-            mensagemDoInvestigador = {
-              author : game.addAcoesOcorreramNoite[author].author,
-              message : nomeCerto + " é uma das seguintes classes: " + classeErrada1 + ", "+ classeErrada2 + ", " + classeCerta
-            }
-            //socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
-            socket.broadcast.emit('mensagemAcaoNoite',mensagemDoInvestigador);
-          }else if(auxNumeroAleatorio == 2){
-            mensagemDoInvestigador = {
-              author : game.addAcoesOcorreramNoite[author].author,
-              message : nomeCerto + " é uma das seguintes classes: " + classeErrada1 + ", " + classeCerta + ", "+ classeErrada2
-            }
-            //socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
-            socket.broadcast.emit('mensagemAcaoNoite',mensagemDoInvestigador);
-          }else {
-            mensagemDoInvestigador = {
-              author : game.addAcoesOcorreramNoite[author].author,
-              message : nomeCerto + " é uma das seguintes classes: " + classeErrada2 + ", " + classeCerta + ", "+ classeErrada1
-            }
-            //socket.emit('mensagemAcaoNoite',mensagemDoInvestigador);
-            socket.broadcast.emit('mensagemAcaoNoite',mensagemDoInvestigador);
-          }
-        }
-      }
-
-      // manda para o olheiro quem visitou a vitima dele
-      for (author in game.addAcoesOcorreramNoite) {
-        if (game.addAcoesOcorreramNoite[author].acao == "Olheiro") {
-          var visitaramVitimaOlheiro = ""
-          for (author2 in game.addAcoesOcorreramNoite){
-            if (game.addAcoesOcorreramNoite[author].vitima == game.addAcoesOcorreramNoite[author2].vitima) {
-              visitaramVitimaOlheiro += game.addAcoesOcorreramNoite[author2].author + ", "
-            }
-          }
-          mensagemDoOlheiro = {
-            author : game.addAcoesOcorreramNoite[author].author,
-            message : visitaramVitimaOlheiro + "visitaram sua vítima"
-          }
-          //socket.emit('mensagemAcaoNoite',mensagemDoOlheiro);
-          socket.broadcast.emit('mensagemAcaoNoite',mensagemDoOlheiro);
-        }
-      }
-      // mostrou pro sheriff se sua vitima é suspeita (mal ou neutro)
-      for (author in game.addAcoesOcorreramNoite) {
-        if (game.addAcoesOcorreramNoite[author].acao == "Sheriff") {
-          for (socketId in game.players){
-            if (game.addAcoesOcorreramNoite[author].vitima == game.players[socketId].playerName) {
-              if (game.players[socketId].PlayerName == auxIncriminado || game.players[socketId].classe == "Mafioso" || game.players[socketId].classe == "Incriminador" || game.players[socketId].classe == "Louco"  || game.players[socketId].classe == "Mercenário" || game.players[socketId].classe == "SerialKiller") {
-                mensagemDoSheriff = {
-                  author : game.addAcoesOcorreramNoite[author].author,
-                  message : "Sua vítima é suspeita"
-                }
-                socket.emit('mensagemAcaoNoite',mensagemDoSheriff);
-                socket.broadcast.emit('mensagemAcaoNoite',mensagemDoSheriff);
-              }else {
-                mensagemDoSheriff = {
-                  author : game.addAcoesOcorreramNoite[author].author,
-                  message : "Sua vítima não é suspeita"
-                }
-                socket.emit('mensagemAcaoNoite',mensagemDoSheriff);
-                socket.broadcast.emit('mensagemAcaoNoite',mensagemDoSheriff);
-              }
-            }
-          }
-        }
-      }
   })
 
   socket.on('enviarDiarioDoMortoBack', data =>{
@@ -864,6 +564,302 @@ io.on('connection', function(socket){
     };
     enviarMensagemFront(mensagemJogo)
     console.log("Amanheceu peguei a viola")
+
+    //Percorro as acoes e coloco as respectivas classes nos seus autores
+    for (author in game.addAcoesOcorreramNoite) {
+      for (socketId in game.players) {
+        if(game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].author){
+          game.addAcoesOcorreramNoite[author].acao = game.players[socketId].classe
+        }
+      }
+    }
+    // Verifico a acao do bloqueador, se ele bloqueia o Transportador
+    for (author in game.addAcoesOcorreramNoite) {
+      if (game.addAcoesOcorreramNoite[author].acao == "Bloqueador") {
+        for (socketId in game.players) {
+          if (game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima) {
+            if (game.players[socketId].classe == "Transportador") {
+              for (author2 in game.addAcoesOcorreramNoite){
+                if (game.players[socketId].playerName == game.addAcoesOcorreramNoite[author2].author) {
+                  game.addAcoesOcorreramNoite[author2].author = ""
+                  game.addAcoesOcorreramNoite[author2].acao = ""
+                  game.addAcoesOcorreramNoite[author2].vitima = ""
+                  game.addAcoesOcorreramNoite[author2].vitima2 = ""
+                }
+              }
+              game.players[socketId].mensagemAcao += "Você foi bloqueado! "
+            }
+          }
+        }
+      }
+    }
+    // Verifico a acao do transportador
+    for (author in game.addAcoesOcorreramNoite) {
+      if (game.addAcoesOcorreramNoite[author].acao == "Transportador") {
+        var auxCarcereiro = 0
+        // Verifico se alguma das vitimas é vitima do carceirero
+        for (socketId in game.players){
+          if (game.addAcoesOcorreramNoite[author].vitima == game.players[socketId].playerName) {
+            if (game.players[socketId].classe == "Carcereiro") {
+              auxCarcereiro = 1
+            }
+          }
+          if (game.addAcoesOcorreramNoite[author].vitima2 == game.players[socketId].playerName) {
+            if (game.players[socketId].classe == "Carcereiro") {
+              auxCarcereiro = 1
+            }
+          }
+        }
+        // se uma das vitimas for presa pelo carcereiro nao troca elas
+        if (auxCarcereiro == 0) {
+          for (socketId in game.players){
+            if (game.addAcoesOcorreramNoite[author].vitima == game.players[socketId].playerName) {
+                game.players[socketId].mensagemAcao += "Você foi transportado! "
+            }
+            if (game.addAcoesOcorreramNoite[author].vitima2 == game.players[socketId].playerName) {
+              game.players[socketId].mensagemAcao += "Você foi transportado! "
+            }
+          }
+          for (author2 in game.addAcoesOcorreramNoite){
+            if (game.addAcoesOcorreramNoite[author].vitima == game.addAcoesOcorreramNoite[author2].vitima) {
+              game.addAcoesOcorreramNoite[author2].vitima = game.addAcoesOcorreramNoite[author].vitima2
+            }
+            if (game.addAcoesOcorreramNoite[author].vitima2 == game.addAcoesOcorreramNoite[author2].vitima) {
+              game.addAcoesOcorreramNoite[author2].vitima = game.addAcoesOcorreramNoite[author].vitima
+            }
+          }
+        }
+      }
+    }
+
+    // Verifico a acao do bloqueador
+    var bloqueouSerialKiller = 0
+    for (author in game.addAcoesOcorreramNoite) {
+      if (game.addAcoesOcorreramNoite[author].acao == "Bloqueador") {
+        var auxVitima = ""
+        for (socketId in game.players) {
+          if (game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima) {
+            // se ele bloquear um serial killer, ele morre
+            if (game.players[socketId].classe == "SerialKiller") {
+              bloqueouSerialKiller = 1
+            }else {
+              auxVitima = game.addAcoesOcorreramNoite[author].vitima
+            }
+          }
+        }
+        // se for um serialkiller, bloqueador morre
+        if (bloqueouSerialKiller == 1) {
+          for (socketId in game.players) {
+            if (game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].author){
+              game.players[socketId].vivo = 0
+              game.players[socketId].mensagemAcao += "Você foi bloquear o SerialKiller, e ele te matou! "
+              socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
+              socket.broadcast.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
+            }
+          }
+        }else {     // se nao for serialkiller, exclui a acao da pessoa
+          for (socketId in game.players){
+            if (game.players[socketId].playerName == auxVitima) {
+              game.players[socketId].mensagemAcao += "Você foi bloqueado! "
+            }
+          }
+
+          for (author2 in game.addAcoesOcorreramNoite){
+            if (game.addAcoesOcorreramNoite[author2].author == auxVitima) {
+              game.addAcoesOcorreramNoite[author2].author = ""
+              game.addAcoesOcorreramNoite[author2].acao = ""
+              game.addAcoesOcorreramNoite[author2].vitima = ""
+              game.addAcoesOcorreramNoite[author2].vitima2 = ""
+            }
+          }
+        }
+      }
+    }
+    //Percorro quem foi incriminado
+    var auxIncriminado = ""
+    for (author in game.addAcoesOcorreramNoite) {
+      if (game.addAcoesOcorreramNoite[author].acao == "Incriminador") {
+        auxIncriminado = game.addAcoesOcorreramNoite[author].vitima
+      }
+    }
+    //Vejo se o carcereiro matou
+    for (author in game.addAcoesOcorreramNoite) {
+      if (game.addAcoesOcorreramNoite[author].acao == "Carcereiro") {
+        if (game.addAcoesOcorreramNoite[author].vitima == "sim") {
+          for (socketId in game.players){
+            if (game.players[socketId].playerName == vitimaDoCarcereiro) {
+              game.players[socketId].vivo = 0
+              socket.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
+              socket.broadcast.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
+            }
+          }
+        }
+      }
+    }
+
+    //Percorro as açoes e verifico se a vitima foi curada
+    for (socketId in game.players) {
+      var curado = 0
+      var prisao = 0
+      var troqueiVitimaMafioso = 0
+      for (author in game.addAcoesOcorreramNoite) {
+        if(game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima){
+          //se ele foi visitado pelo médico, curo ele
+          if (game.addAcoesOcorreramNoite[author].acao == "Médico") {
+            curado = 1
+            game.players[socketId].mensagemAcao += "Você foi curado pelo médico! "
+          }
+          //se ele foi visitado pelo carcereiro, prendo ele
+          if (game.addAcoesOcorreramNoite[author].acao == "Carcereiro") {
+            prisao = 1
+          }
+          //se ele foi visitado pelo chefe da mafia, faço o mafioso receber ele como vitima
+          if (game.addAcoesOcorreramNoite[author].acao == "Chefe") {
+            for (author2 in game.addAcoesOcorreramNoite){
+              //se o mafioso realizou uma acao troco a vitima dele
+              if (game.addAcoesOcorreramNoite[author2].acao == "Mafioso") {
+                game.addAcoesOcorreramNoite[author2].vitima = game.addAcoesOcorreramNoite[author].vitima
+                troqueiVitimaMafioso = 1
+              }
+            }
+            //se o mafioso nao fez uma acao, eu crio ela agora
+            if (troqueiVitimaMafioso == 0) {
+              for (socketId2 in game.players)
+              if (game.players[socketId2].classe == "Mafioso") {
+                game.addAcoesOcorreramNoite(game.players[socketId2].PlayerName,game.players[socketId2].classe,game.addAcoesOcorreramNoite[author].vitima,"")
+              }
+            }
+            // limpo a ficha do chefe da mafia
+            game.addAcoesOcorreramNoite[author].author = ""
+            game.addAcoesOcorreramNoite[author].acao = ""
+            game.addAcoesOcorreramNoite[author].vitima = ""
+          }
+        }
+      }
+      for (author in game.addAcoesOcorreramNoite) {
+        if(game.players[socketId].playerName == game.addAcoesOcorreramNoite[author].vitima){
+          if (game.addAcoesOcorreramNoite[author].acao == "Mafioso") {
+            if (curado == 0 && prisao == 0) {
+              game.players[socketId].vivo = 0
+              socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
+              socket.broadcast.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
+            }
+          }
+          if (game.addAcoesOcorreramNoite[author].acao == "SerialKiller") {
+            if (curado == 0 && prisao == 0 && bloqueouSerialKiller == 0) {
+              game.players[socketId].vivo = 0
+              socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
+              socket.broadcast.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
+            }
+          }
+        }
+      }
+    }
+    // manda para o investigador a classe da pessoa e mais 2 aleatorias
+    let classesBemInvestigavel = ["Carcereiro", "Sheriff", "Investigador", "Olheiro", "Médico", "Medium", "Bloqueador", "Transportador"]
+    let classesMafiaInvestigavel = ["Mafioso", "Incriminador", "Chefe"]
+    for (author in game.addAcoesOcorreramNoite) {
+      if (game.addAcoesOcorreramNoite[author].acao == "Investigador") {
+        var classeCerta = ""
+        var nomeCerto = ""
+        for (socketId in game.players) {
+          if (game.addAcoesOcorreramNoite[author].vitima == game.players[socketId].playerName) {
+            classeCerta = game.players[socketId].classe
+            nomeCerto = game.players[socketId].playerName
+          }
+        }
+        var classeErrada1 = classesBemInvestigavel[getRandomInt(0, classesBemInvestigavel.length)]
+        var classeErrada2 = classesMafiaInvestigavel[getRandomInt(0, classesMafiaInvestigavel.length)]
+        if (classeCerta == classeErrada1) {
+          classeErrada1 = classesBemInvestigavel[getRandomInt(1, classesBemInvestigavel.length)]
+        }
+        if (classeCerta == classeErrada2) {
+          classeErrada2 = classesMafiaInvestigavel[getRandomInt(1, classesMafiaInvestigavel.length)]
+        }
+        var auxNumeroAleatorio = getRandomInt(0,3)
+        if (auxNumeroAleatorio == 0) {
+          for (socketId in game.players){
+            if (game.addAcoesOcorreramNoite[author].author == game.players[socketId].playerName){
+              game.players[socketId].mensagemAcao += nomeCerto + " é uma das seguintes classes: " + classeCerta + ", " + classeErrada1 + ", "+ classeErrada2 + " "
+            }
+          }
+        }else if (auxNumeroAleatorio == 1) {
+          for (socketId in game.players){
+            if (game.addAcoesOcorreramNoite[author].author == game.players[socketId].playerName){
+              game.players[socketId].mensagemAcao += nomeCerto + " é uma das seguintes classes: " + classeCerta + ", " + classeErrada1 + ", "+ classeErrada2 + " "
+            }
+          }
+        }else if(auxNumeroAleatorio == 2){
+          for (socketId in game.players){
+            if (game.addAcoesOcorreramNoite[author].author == game.players[socketId].playerName){
+              game.players[socketId].mensagemAcao += nomeCerto + " é uma das seguintes classes: " + classeCerta + ", " + classeErrada1 + ", "+ classeErrada2 + " "
+            }
+          }
+        }else {
+          for (socketId in game.players){
+            if (game.addAcoesOcorreramNoite[author].author == game.players[socketId].playerName){
+              game.players[socketId].mensagemAcao += nomeCerto + " é uma das seguintes classes: " + classeCerta + ", " + classeErrada1 + ", "+ classeErrada2 + " "
+            }
+          }
+        }
+      }
+    }
+
+    // manda para o olheiro quem visitou a vitima dele
+    for (author in game.addAcoesOcorreramNoite) {
+      if (game.addAcoesOcorreramNoite[author].acao == "Olheiro") {
+        var visitaramVitimaOlheiro = ""
+        for (author2 in game.addAcoesOcorreramNoite){
+          if (game.addAcoesOcorreramNoite[author].vitima == game.addAcoesOcorreramNoite[author2].vitima) {
+            visitaramVitimaOlheiro += game.addAcoesOcorreramNoite[author2].author + ", "
+          }
+        }
+        for (socketId in game.players){
+          if (game.addAcoesOcorreramNoite[author].author == game.players[socketId].playerName){
+            if (visitaramVitimaOlheiro == "") {
+              game.players[socketId].mensagemAcao += "Ninguém visitou sua vítima "
+            }else {
+              game.players[socketId].mensagemAcao += visitaramVitimaOlheiro + "visitaram sua vítima "
+            }
+          }
+        }
+      }
+    }
+    // mostrou pro sheriff se sua vitima é suspeita (mal ou neutro)
+    for (author in game.addAcoesOcorreramNoite) {
+      if (game.addAcoesOcorreramNoite[author].acao == "Sheriff") {
+        for (socketId in game.players){
+          if (game.addAcoesOcorreramNoite[author].vitima == game.players[socketId].playerName) {
+            if (game.players[socketId].PlayerName == auxIncriminado || game.players[socketId].classe == "Mafioso" || game.players[socketId].classe == "Incriminador" || game.players[socketId].classe == "Louco"  || game.players[socketId].classe == "Mercenário" || game.players[socketId].classe == "SerialKiller") {
+              for (socketId in game.players){
+                if (game.addAcoesOcorreramNoite[author].author == game.players[socketId].playerName){
+                  game.players[socketId].mensagemAcao += "Sua vítima é suspeita "
+                }
+              }
+            }else {
+              for (socketId in game.players){
+                if (game.addAcoesOcorreramNoite[author].author == game.players[socketId].playerName){
+                  game.players[socketId].mensagemAcao += "Sua vítima não é suspeita "
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    for (socketId in game.players){
+      if (game.players[socketId].mensagemAcao != "") {
+        mensagemDeAcao = {
+          author : game.players[socketId].playerName,
+          message : game.players[socketId].mensagemAcao
+        }
+        socket.emit('mensagemAcaoNoite',mensagemDeAcao);
+        socket.broadcast.emit('mensagemAcaoNoite',mensagemDeAcao);
+        game.players[socketId].mensagemAcao = ""
+      }
+    }
+
     //Envia para o front as mensagens das açoes que ocorreram de noite
     var mensagemAcoes = {}
     for (author in game.addAcoesOcorreramNoite) {
@@ -1181,6 +1177,7 @@ function createGame() {
       playerName : playerName,
       classe : "",
       diario: "",
+      mensagemAcao: "",
       vivo : 1
     }
   }

@@ -852,7 +852,6 @@
           var confirmacao = radios[i].value
         }
       }
-
       // var confirmacao = $('input[name=confirmacao]').val();
       socket.emit('sendSegundaVotacao', confirmacao);
       //Limpar campo de mensagem após envio da mensagem:
