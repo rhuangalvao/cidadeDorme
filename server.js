@@ -192,7 +192,8 @@ io.on('connection', function(socket){
       nomeClasseObject[socketId] = {
         playerName : game.players[socketId].playerName,
         vivo : game.players[socketId].vivo,
-        classe : game.players[socketId].classe
+        classe : game.players[socketId].classe,
+        diario : game.players[socketId].diario
       }
     }
     return nomeClasseObject
@@ -445,7 +446,7 @@ io.on('connection', function(socket){
             game.players[socketId].vivo = 0
             var mortoVotacaoObject = {
                   author: "JOGO",
-                  message: game.players[socketId].playerName + " --foi morto por votacao e ele era "+ game.players[socketId].classe,
+                  message: game.players[socketId].playerName + " - foi morto por votacao e ele era "+ game.players[socketId].classe,
             };
             enviarMensagemFront(mortoVotacaoObject)
             socket.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
@@ -455,7 +456,6 @@ io.on('connection', function(socket){
               message : "Diário de "+ game.players[socketId].playerName +": " + game.players[socketId].diario
             }
             enviarMensagemFront(mensagemDoDiario)
-            game.players[socketId].diario = ""
             //Se o jester for expulso por votacao, ele ganha
             if (game.players[socketId].classe == "Jester") {
               alguemGanhou("Jester")
@@ -533,7 +533,7 @@ io.on('connection', function(socket){
     socket.emit('acoesNoite', nomeClasse(), vitimaDoCarcereiro);
     socket.broadcast.emit('acoesNoite', nomeClasse(), vitimaDoCarcereiro);
     console.log(nomeClasse())
-    setTimeout(function(){ amanhecer(); }, tempoDuracao/4);
+    setTimeout(function(){ verificarAcoes(); }, tempoDuracao/4);
   }
   //Realiza acoes que vieram do front
   socket.on('sendAcaoNoite', data =>{
@@ -541,32 +541,7 @@ io.on('connection', function(socket){
       game.addAcoesOcorreramNoite(data.author,data.qualAcao,data.vitima,data.vitima2)
   })
 
-  socket.on('enviarDiarioDoMortoBack', data =>{
-      console.log(data.diarioMorto)
-      for (socketId in game.players){
-        if (game.players[socketId].playerName == data.nomeDoMorto) {
-          game.players[socketId].diario = data.diarioMorto
-        }
-      }
-  })
-
-  function amanhecer() {
-    //Verifica se ainda tem jogadores na sala
-    if (io.engine.clientsCount == 0 || reiniciar == 1) {
-      messages = []
-      votosDoDia = []
-      rodada = 0
-      reiniciar = 0
-      return
-    }
-    //Gera um log de inicio do amanhecer no front e no back
-    var mensagemJogo = {
-          author: "JOGO",
-          message: "Inicio do dia",
-    };
-    enviarMensagemFront(mensagemJogo)
-    console.log("Amanheceu peguei a viola")
-
+  function verificarAcoes(){
     //Percorro as acoes e coloco as respectivas classes nos seus autores
     for (author in game.addAcoesOcorreramNoite) {
       for (socketId in game.players) {
@@ -726,9 +701,10 @@ io.on('connection', function(socket){
             }
             //se o mafioso nao fez uma acao, eu crio ela agora
             if (troqueiVitimaMafioso == 0) {
-              for (socketId2 in game.players)
-              if (game.players[socketId2].classe == "Mafioso") {
-                game.addAcoesOcorreramNoite(game.players[socketId2].PlayerName,game.players[socketId2].classe,game.addAcoesOcorreramNoite[author].vitima,"")
+              for (socketId2 in game.players){
+                if (game.players[socketId2].classe == "Mafioso") {
+                  game.addAcoesOcorreramNoite(game.players[socketId2].PlayerName,game.players[socketId2].classe,game.addAcoesOcorreramNoite[author].vitima,"")
+                }
               }
             }
             // limpo a ficha do chefe da mafia
@@ -752,6 +728,15 @@ io.on('connection', function(socket){
               game.players[socketId].vivo = 0
               socket.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
               socket.broadcast.emit('buscarDiarioDoMorto',game.addAcoesOcorreramNoite[author].vitima);
+            }
+          }
+          for (socketId2 in game.players){
+            if(game.players[socketId2].playerName == vitimaDoCarcereiro){
+              if(game.addAcoesOcorreramNoite[author].acao == "Carcereiro" && game.addAcoesOcorreramNoite[author].vitima == "sim"){
+                game.players[socketId2].vivo = 0
+                socket.emit('buscarDiarioDoMorto',game.players[socketId2].playerName);
+                socket.broadcast.emit('buscarDiarioDoMorto',game.players[socketId2].playerName);
+              }
             }
           }
         }
@@ -849,6 +834,36 @@ io.on('connection', function(socket){
         }
       }
     }
+    console.log("Dentro da funcao açoes, vou chamar o amanhecer");
+    setTimeout(function(){ amanhecer(); }, tempoDuracao/60);
+  }
+
+  socket.on('enviarDiarioDoMortoBack', (diarioMorto, nomeDoMorto) =>{
+    for (socketId in game.players){
+      if (game.players[socketId].playerName == nomeDoMorto) {
+        game.players[socketId].diario = diarioMorto
+      }
+    }
+  })
+
+  function amanhecer() {
+    //Verifica se ainda tem jogadores na sala
+    if (io.engine.clientsCount == 0 || reiniciar == 1) {
+      messages = []
+      votosDoDia = []
+      rodada = 0
+      reiniciar = 0
+      return
+    }
+    //Gera um log de inicio do amanhecer no front e no back
+    var mensagemJogo = {
+          author: "JOGO",
+          message: "Inicio do dia",
+    };
+    enviarMensagemFront(mensagemJogo)
+    console.log("Amanheceu peguei a viola")
+
+    console.log(nomeClasse())
 
     for (socketId in game.players){
       if (game.players[socketId].mensagemAcao != "") {
@@ -864,6 +879,7 @@ io.on('connection', function(socket){
 
     //Envia para o front as mensagens das açoes que ocorreram de noite
     var mensagemAcoes = {}
+    var mensagemDoDiario = {}
     for (author in game.addAcoesOcorreramNoite) {
       console.log(game.addAcoesOcorreramNoite[author])
       for (socketId in game.players) {
@@ -874,12 +890,13 @@ io.on('connection', function(socket){
               message : "O jogador "+game.players[socketId].playerName+" foi assassinado pela Máfia, e ele era "+ game.players[socketId].classe
             }
             enviarMensagemFront(mensagemAcoes)
+            //socket.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
+            //socket.broadcast.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
             mensagemDoDiario = {
               author : "JOGO",
               message : "Diário de "+ game.players[socketId].playerName +": " + game.players[socketId].diario
             }
             enviarMensagemFront(mensagemDoDiario)
-            game.players[socketId].diario = ""
           }
           if(game.addAcoesOcorreramNoite[author].acao == "SerialKiller"){
             mensagemAcoes = {
@@ -887,14 +904,14 @@ io.on('connection', function(socket){
               message : "O jogador "+game.players[socketId].playerName+" foi assassinado pelo SerialKiller, e ele era "+ game.players[socketId].classe
             }
             enviarMensagemFront(mensagemAcoes)
+            //socket.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
+            //socket.broadcast.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
             mensagemDoDiario = {
               author : "JOGO",
               message : "Diário de "+ game.players[socketId].playerName +": " + game.players[socketId].diario
             }
             enviarMensagemFront(mensagemDoDiario)
-            game.players[socketId].diario = ""
           }
-
         }
         if(game.players[socketId].playerName == vitimaDoCarcereiro){
           if(game.addAcoesOcorreramNoite[author].acao == "Carcereiro" && game.addAcoesOcorreramNoite[author].vitima == "sim"){
@@ -903,12 +920,13 @@ io.on('connection', function(socket){
               message : "O jogador "+game.players[socketId].playerName+" foi assassinado pelo Carcereiro, e ele era "+ game.players[socketId].classe
             }
             enviarMensagemFront(mensagemAcoes)
+            //socket.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
+            //socket.broadcast.emit('buscarDiarioDoMorto',game.players[socketId].playerName);
             mensagemDoDiario = {
               author : "JOGO",
-              message : "Diário de "+ game.players[socketId].playerName +": " + game.players[socketId].diario
+              message : "Diário de " + game.players[socketId].playerName + ": " + game.players[socketId].diario
             }
             enviarMensagemFront(mensagemDoDiario)
-            game.players[socketId].diario = ""
           }
         }
       }
@@ -1178,8 +1196,8 @@ function createGame() {
     return game.players[socketId] = {
       playerName : playerName,
       classe : "",
-      diario: "",
-      mensagemAcao: "",
+      diario : "",
+      mensagemAcao : "",
       vivo : 1
     }
   }
