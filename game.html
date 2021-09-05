@@ -526,7 +526,7 @@
 
     let tempoDuracao = 120000
 
-    socket.on('acoesNoite', function (nomeClasse, vitimaDoCarcereiro) {
+    socket.on('acoesNoite', function (nomeClasse, vitimaDoCarcereiro, medicoCurouSiMesmo) {
       jQuery(function ($) {
         var tempo = tempoDuracao / 4000,
           display = $('#time');
@@ -539,9 +539,6 @@
 
       if (vitimaDoCarcereiro == playerName) {
         $('#chatCarcereiro').show()
-        //setTimeout(function () { $("#acoes").hide(); }, 500);
-        //setTimeout(function () { $("#chatMafia").hide(); }, 500);
-        console.log("Abre o chat do Carcereiro");
       }
 
       for (var property in nomeClasse){
@@ -559,7 +556,7 @@
             $('#acoes').show()
             $('#chatMafia').show()
             for (var destino in nomeClasse){
-              if (nomeClasse[destino].playerName != playerName || nomeClasse[destino].vivo != 0){
+              if (nomeClasse[destino].playerName != playerName && nomeClasse[destino].vivo != 0){
                 document.getElementById("acoes").innerHTML +=
                 "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
                 "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
@@ -571,15 +568,23 @@
           if (nomeClasse[property].classe == "SerialKiller") {
             document.getElementById("acoes").innerHTML = ""
             $('#acoes').show()
+            document.getElementById("acoes").innerHTML +=
+              "<p>Escolha se deseja ser cauteloso esta noite:</p>" +
+              "<div><input type='radio' id='sim' name='cauteloso' value='sim'>" +
+              "<label for='sim'>Sim</label>" +
+              "<input type='radio' id='nao' name='cauteloso' value='nao'>" +
+              "<label for='nao'>Não</label></div>" +
+              "<p>Escolha quem deseja matar:</p>" 
+
             for (var destino in nomeClasse){
-              if (nomeClasse[destino].playerName != playerName || nomeClasse[destino].vivo != 0){
+              if (nomeClasse[destino].playerName != playerName && nomeClasse[destino].vivo != 0){
                 document.getElementById("acoes").innerHTML +=
                 "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
                 "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
               }
             }
             document.getElementById("acoes").innerHTML +=
-                "<button type='submit'>Matar</button>"
+                "<button type='submit'>Enviar</button>"
           }
           if (nomeClasse[property].classe == "Incriminador") {
             document.getElementById("acoes").innerHTML = ""
@@ -593,7 +598,7 @@
             }
             if (investiga == 1) {
               for (var destino in nomeClasse){
-                if (nomeClasse[destino].playerName != playerName || nomeClasse[destino].vivo != 0){
+                if (nomeClasse[destino].playerName != playerName && nomeClasse[destino].vivo != 0){
                   document.getElementById("acoes").innerHTML +=
                   "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
                   "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
@@ -603,7 +608,7 @@
                   "<button type='submit'>Incriminar</button>"
             }else {
               for (var destino in nomeClasse){
-                if (nomeClasse[destino].playerName != playerName || nomeClasse[destino].vivo != 0){
+                if (nomeClasse[destino].playerName != playerName && nomeClasse[destino].vivo != 0){
                   document.getElementById("acoes").innerHTML +=
                   "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
                   "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
@@ -617,7 +622,7 @@
             document.getElementById("acoes").innerHTML = ""
             $('#acoes').show()
             for (var destino in nomeClasse){
-              if (nomeClasse[destino].playerName != playerName || nomeClasse[destino].vivo != 0){
+              if (nomeClasse[destino].playerName != playerName && nomeClasse[destino].vivo != 0){
                 document.getElementById("acoes").innerHTML +=
                 "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
                 "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
@@ -627,17 +632,31 @@
                 "<button type='submit'>Investigar</button>"
           }
           if (nomeClasse[property].classe == "Médico") {
-            document.getElementById("acoes").innerHTML = ""
-            $('#acoes').show()
-            for (var destino in nomeClasse){
-              if (nomeClasse[destino].playerName != playerName || nomeClasse[destino].vivo != 0){
-                document.getElementById("acoes").innerHTML +=
-                "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
-                "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+            if (medicoCurouSiMesmo == 0) {
+              document.getElementById("acoes").innerHTML = ""
+              $('#acoes').show()
+              for (var destino in nomeClasse){
+                if (nomeClasse[destino].vivo != 0){
+                  document.getElementById("acoes").innerHTML +=
+                  "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
+                  "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+                }
               }
+              document.getElementById("acoes").innerHTML +=
+                  "<button type='submit'>Curar</button>"
+            }else {
+              document.getElementById("acoes").innerHTML = ""
+              $('#acoes').show()
+              for (var destino in nomeClasse){
+                if (nomeClasse[destino].playerName != playerName && nomeClasse[destino].vivo != 0){
+                  document.getElementById("acoes").innerHTML +=
+                  "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
+                  "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
+                }
+              }
+              document.getElementById("acoes").innerHTML +=
+                  "<button type='submit'>Curar</button>"
             }
-            document.getElementById("acoes").innerHTML +=
-                "<button type='submit'>Curar</button>"
           }
           if (nomeClasse[property].classe == "Carcereiro" && vitimaDoCarcereiro != "") {
             document.getElementById("acoes").innerHTML = ""
@@ -654,7 +673,7 @@
             document.getElementById("acoes").innerHTML = ""
             $('#acoes').show()
             for (var destino in nomeClasse){
-              if (nomeClasse[destino].playerName != playerName || nomeClasse[destino].vivo != 0){
+              if (nomeClasse[destino].playerName != playerName && nomeClasse[destino].vivo != 0){
                 document.getElementById("acoes").innerHTML +=
                 "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
                 "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
@@ -669,7 +688,7 @@
               "<p>Marque apenas 2 jogadores para transportar</p>"
             $('#acoes').show()
             for (var destino in nomeClasse){
-              if (nomeClasse[destino].playerName != playerName || nomeClasse[destino].vivo != 0){
+              if (nomeClasse[destino].vivo != 0){
                 document.getElementById("acoes").innerHTML +=
                 "<div><input type='checkbox' id="+nomeClasse[destino].playerName+" name='vitima' value="+nomeClasse[destino].playerName+">" +
                 "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
@@ -683,6 +702,19 @@
           }
           if (nomeClasse[property].classe == "Carcereiro") {
             $('#chatCarcereiro').show()
+          }
+        }else {
+          if (nomeClasse[property].playerName == playerName && nomeClasse[property].vivo == 1 && nomeClasse[property].classe == "SerialKiller") {
+            document.getElementById("acoes").innerHTML = ""
+            $('#acoes').show()
+            document.getElementById("acoes").innerHTML +=
+              "<p>Escolha se deseja ser cauteloso esta noite:</p>" +
+              "<div><input type='radio' id='sim' name='cauteloso' value='sim'>" +
+              "<label for='sim'>Sim</label>" +
+              "<input type='radio' id='nao' name='cauteloso' value='nao'>" +
+              "<label for='nao'>Não</label></div>"
+            document.getElementById("acoes").innerHTML +=
+                "<button type='submit'>Escolha</button>"
           }
         }
       }
@@ -706,6 +738,14 @@
           }
         }
       }
+      var cauteloso = ""
+      var radiosSerialKiller = document.getElementsByName("cauteloso");
+      for (var i = 0; i < radiosSerialKiller.length; i++) {
+        if (radiosSerialKiller[i].checked) {
+          vitima2 = radiosSerialKiller[i].value
+          cauteloso = radiosSerialKiller[i].value
+        }
+      }
       //Manda para o back a ação
       if (contadorChecks <=2) {
         if (vitima2 == "") {
@@ -716,6 +756,15 @@
             qualAcao: qualAcao,
             vitima: vitima,
             vitima2: "",
+          };
+        }else if(cauteloso == "sim"){
+          var author = playerName
+          var qualAcao = "SerialKiller"
+          var acaoObject = {
+            author: author,
+            qualAcao: qualAcao,
+            vitima: vitima,
+            vitima2: "cauteloso",
           };
         }else{
           var author = playerName
@@ -750,7 +799,7 @@
               }
             }
             document.getElementById("acoesDoDia").innerHTML +=
-                "<button type='submit'>Interrogar</button>"
+                "<button type='submit'>Prender</button>"
           }
         }
       }
@@ -811,7 +860,7 @@
           document.getElementById("escolhaVotacao").innerHTML = ""
           $('#escolhaVotacao').show()
           for (var destino in nomeClasse){
-            if (nomeClasse[destino].playerName != playerName || nomeClasse[destino].vivo != 0){
+            if (nomeClasse[destino].playerName != playerName && nomeClasse[destino].vivo != 0){
               document.getElementById("escolhaVotacao").innerHTML +=
               "<div><input type='radio' id="+nomeClasse[destino].playerName+" name='expulsado' value="+nomeClasse[destino].playerName+">" +
               "<label for="+nomeClasse[destino].playerName+">"+nomeClasse[destino].playerName+"</label>"
@@ -974,7 +1023,6 @@
           };
            parseInt($('input[name='+classesDisponiveis[i]+']').val())
         }
-        console.log(quantClassesEscolhidas);
         socket.emit('sorteioClasses', quantClassesEscolhidas)
         $("#botaoComecarJogo").hide()
       }
